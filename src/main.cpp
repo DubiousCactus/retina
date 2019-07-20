@@ -7,6 +7,7 @@
  * This is an example of usage for this library.
  */
 
+#include <iostream>
 #include <vector>
 
 #define cimg_display 0
@@ -24,8 +25,10 @@ int main() {
     // Build the frame
     ARKIT::Frame frame1;
     frame1.pixels = image.data();
+    std::cout << "[*] Extracting features..." << std::endl;
     extractor.Extract(frame1);
     std::vector<ARKIT::Keypoint> keypoints = extractor.GetKeypoints();
+    std::cout << "[*] Keypoints extracted: " << keypoints.size() << std::endl;
 
     return 0;
 }
