@@ -8,6 +8,10 @@
  */
 
 #include <vector>
+
+#define cimg_display 0
+#define cimg_use_jpeg 1
+
 #include "../external/CImg.h"
 #include "libArkit_FeatureExtractor.cpp"
 

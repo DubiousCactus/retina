@@ -34,7 +34,7 @@ namespace ARKIT
             std::vector<Keypoint> keypoints;
 
         public:
-            virtual void Extract(Frame f);
+            virtual void Extract(Frame f)=0;
     };
 
 
@@ -98,7 +98,7 @@ namespace ARKIT
                 this->n_keypoints = 150;
                 this->pog_levels = 6;
             }
-            ~ORBExtractor();
+            ~ORBExtractor() {}
 
             void Extract(Frame f)
             {
