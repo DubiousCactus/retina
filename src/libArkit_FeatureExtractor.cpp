@@ -16,21 +16,22 @@ namespace ARKIT
     };
 
     struct Frame {
-        char *pixels;
+        unsigned char *pixels;
     };
 
     struct Keypoint {
 
     };
 
-    struct Pyramid {
-
+    struct ScalePyramid {
+        Frame *scales;
     };
 
     class FeatureExtractor
     {
         protected:
             std::vector<FeatureDescriptor> features;
+            std::vector<Keypoint> keypoints;
 
         public:
             virtual void Extract(Frame f);
@@ -77,9 +78,14 @@ namespace ARKIT
             }
 
             /* Build a scale pyramid of the base image */
-            Frame BuildPyramid(Frame f, unsigned short levels)
+            ScalePyramid BuildPyramid(Frame f, unsigned short levels)
             {
-                return Frame();
+                Frame frames[this->pog_levels];
+                frames[0] = Frame();
+                ScalePyramid pyramid;
+                pyramid.scales = frames;
+
+                return pyramid;
             }
 
             float IntensityCentroid();
@@ -107,10 +113,15 @@ namespace ARKIT
                 // STEP 2: for each level of the PoG
                 for (unsigned short i = 0; i < this->pog_levels; i++) {
                     std::vector<Keypoint> keypoints = this->HarrisFilter(
-                            this->FAST(f, this->intensity_threshold,
+                            this->FAST(pyramid.scales[i], this->intensity_threshold,
                                 this->n_keypoints),
                             this->top_n_keypoints); 
                 }
+            }
+
+            std::vector<Keypoint> GetKeypoints()
+            {
+                return this->keypoints;
             }
 
             void Describe()
