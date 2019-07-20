@@ -24,6 +24,8 @@ int main() {
     ARKIT::ORBExtractor extractor;
     // Build the frame
     ARKIT::Frame frame1;
+    frame1.width = image.width();
+    frame1.height = image.height();
     frame1.pixels = image.data();
     std::cout << "[*] Extracting features..." << std::endl;
     extractor.Extract(frame1);

@@ -5,6 +5,7 @@
  * Distributed under terms of the MIT license.
  */
 
+#include <iostream>
 #include <vector>
 
 namespace ARKIT
@@ -17,6 +18,8 @@ namespace ARKIT
 
     struct Frame {
         unsigned char *pixels;
+        unsigned int width;
+        unsigned int height;
     };
 
     struct Keypoint {
@@ -45,14 +48,15 @@ namespace ARKIT
             unsigned short top_n_keypoints;
             unsigned short n_keypoints;
             unsigned short pog_levels;
+            unsigned short radius;
 
             /* Extract N keypoints in the given frame, using the Features from
              * Accelerated Segment Test algorithm with a given circular radius
              * (threshold)
              */
-            std::vector<Keypoint> FAST(Frame f, unsigned short threshold,
-                    unsigned short n)
+            std::vector<Keypoint> FAST(Frame f)
             {
+                std::cout << "\t-> Extracting keypoints (FAST)..." << std::endl;
                 /*
                  * 1. Select a pixel P in the image, with intensity I
                  * 2. Select appropriate threshold value t
@@ -65,23 +69,33 @@ namespace ARKIT
                  * 6. Non-maximal suppression
                  */
 
+                std::cout << "FRAME INFO: " << f.width << "x" << f.height << std::endl;
+                for (unsigned int y = this->radius; y < (f.height - this->radius); y++) {
+                    for (unsigned int x = this->radius; x < (f.width - this->radius); x++) {
+                        unsigned char p = f.pixels[x*(y+1)];
+
+                        // TODO: Generate circle of radius r around P
+                    }
+                }
+
                 return std::vector<Keypoint>();
             }
 
             /* Order the FAST keypoints and return the N top points using the
              * Harris corner measure
              */
-            std::vector<Keypoint> HarrisFilter(std::vector<Keypoint> keypoints,
-                    unsigned short n)
+            std::vector<Keypoint> HarrisFilter(std::vector<Keypoint> keypoints)
             {
                 return std::vector<Keypoint>();
             }
 
             /* Build a scale pyramid of the base image */
-            ScalePyramid BuildPyramid(Frame f, unsigned short levels)
+            ScalePyramid BuildPyramid(Frame f)
             {
                 Frame frames[this->pog_levels];
-                frames[0] = Frame();
+                for (unsigned short i = 0; i < this->pog_levels; i++) {
+                    frames[i] = f; // TODO
+                }
                 ScalePyramid pyramid;
                 pyramid.scales = frames;
 
@@ -96,7 +110,8 @@ namespace ARKIT
                 this->intensity_threshold = 9;
                 this->top_n_keypoints = 50;
                 this->n_keypoints = 150;
-                this->pog_levels = 6;
+                this->pog_levels = 1;
+                this->radius = 3;
             }
             ~ORBExtractor() {}
 
@@ -109,13 +124,12 @@ namespace ARKIT
                  */
 
                 // STEP 1: Build the scale pyramid of the current frame
-                ScalePyramid pyramid = this->BuildPyramid(f, this->pog_levels);
+                std::cout << "\t-> Building the pyramid" << std::endl;
+                ScalePyramid pyramid = this->BuildPyramid(f);
                 // STEP 2: for each level of the PoG
                 for (unsigned short i = 0; i < this->pog_levels; i++) {
                     std::vector<Keypoint> keypoints = this->HarrisFilter(
-                            this->FAST(pyramid.scales[i], this->intensity_threshold,
-                                this->n_keypoints),
-                            this->top_n_keypoints); 
+                            this->FAST(pyramid.scales[i]));
                 }
             }
 
