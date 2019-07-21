@@ -26,7 +26,10 @@ int main() {
     ARKIT::Frame frame1;
     frame1.width = image.width();
     frame1.height = image.height();
-    frame1.pixels = image.data();
+    for (auto pixel = image.begin(); pixel != image.end(); pixel++)
+        frame1.pixels.push_back(ARKIT::Pixel(pixel[0])); //Only R component for now
+    frame1.channels = image.spectrum();
+
     std::cout << "[*] Extracting features..." << std::endl;
     extractor.Extract(frame1);
     std::vector<ARKIT::Keypoint> keypoints = extractor.GetKeypoints();
