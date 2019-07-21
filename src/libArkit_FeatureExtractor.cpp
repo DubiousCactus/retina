@@ -213,9 +213,10 @@ namespace ARKIT
                  *  darker than I - t. (n, or threshold, can be chosen to be 12)
                  * 6. Non-maximal suppression
                  */
+                int keypoints = 0;
 
-                for (unsigned int y = this->radius; y < (f.height - this->radius); y += 3) {
-                    for (unsigned int x = this->radius; x < (f.width - this->radius); x += 3) {
+                for (unsigned int y = this->radius; y < (f.height - this->radius); y++) {
+                    for (unsigned int x = this->radius; x < (f.width - this->radius); x++) {
                         int Ip = f.pixels[x*(y+1)].intensity;
                         Pixel center(x, y);
                         center.intensity = Ip;
@@ -256,8 +257,53 @@ namespace ARKIT
 
                         /* Complete corner test */
                         std::vector<Pixel> circle = this->BresenhamCircle(center, this->radius);
+                        auto GetPixelWithOverflow = [] (std::vector<Pixel> v, int i) {
+                            int circleSize = v.size();
+                            if (i >= circleSize)
+                                return v.at(circleSize - i);
+                            else
+                                return v.at(i);
+                        };
+                        bool corner = false;
+                        for (int i = 0; i < (int)circle.size(); i++) {
+                            std::vector<Pixel> contiguousPixels;
+                            for (int j = 0; j < this->contiguous_pixels; j++)
+                                contiguousPixels.push_back(GetPixelWithOverflow(circle, j));
+
+                            bool brighter = true, darker = true;
+                            for (auto p = contiguousPixels.begin(); p !=
+                                    contiguousPixels.end(); p++) {
+                                if (p->intensity <= (Ip + this->intensity_threshold)) {
+                                    brighter = false;
+                                    break;
+                                }
+                            }
+
+                            if (brighter) {
+                                corner = true;
+                                break;
+                            }
+
+                            for (auto p = contiguousPixels.begin(); p !=
+                                    contiguousPixels.end(); p++) {
+                                if (p->intensity >= (Ip - this->intensity_threshold)) {
+                                    darker = false;
+                                    break;
+                                }
+                            }
+
+                            if (darker) {
+                                corner = true;
+                                break;
+                            }
+                        }
+
+                        if (corner)
+                            keypoints++;
                     }
                 }
+
+                std::cout<< "\t-> Found " << keypoints << " keypoints" << std::endl;
 
                 return std::vector<Keypoint>();
             }
