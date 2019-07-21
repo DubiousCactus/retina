@@ -38,6 +38,19 @@ namespace ARKIT
         {
             return (p.x == this->x) && (p.y == this->y);
         }
+/*
+        bool operator< (const Pixel& p) const
+        {
+            return ((this->x - p.x) == 1 && this->y == p.y)
+                || ((this->x - p.x) == 1 && this->y < p.y)
+                || (this->x == p.x && this->y < p.y);
+        }*/
+
+        bool operator> (const Pixel& p) const
+        {
+            return (((this->x - p.x) == 1) && (this->y >= p.y))
+                || ((this->x == p.x) && (this->y > p.y));
+        }
     };
 
     struct Frame {
@@ -80,17 +93,15 @@ namespace ARKIT
              */
             std::vector<Pixel> BresenhamCircle(Pixel center, int radius)
             {
-                std::cout << "\t-> BresenhamCircle([" << center.x << "," <<
-                    center.y << "], " << radius << ")" << std::endl;
                 std::vector<Pixel> circlePixels;
                 Pixel to(0, radius);
                 int d = 3 - (2 * radius);
 
-                auto drawQuadrant = [] (Pixel c, Pixel t) { 
+                auto EightWaySymmetricPlot = [] (Pixel c, Pixel t) { 
                     std::vector<Pixel> quadrant;
+                    quadrant.push_back(Pixel(c.x + t.x, c.y - t.y));
                     quadrant.push_back(Pixel(c.x + t.x, c.y + t.y));
                     quadrant.push_back(Pixel(c.x - t.x, c.y + t.y));
-                    quadrant.push_back(Pixel(c.x + t.x, c.y - t.y));
                     quadrant.push_back(Pixel(c.x - t.x, c.y - t.y));
                     quadrant.push_back(Pixel(c.x + t.y, c.y + t.x));
                     quadrant.push_back(Pixel(c.x - t.y, c.y + t.x));
@@ -100,7 +111,7 @@ namespace ARKIT
                     return quadrant;
                 };
 
-                auto quadrant = drawQuadrant(center, to);
+                auto quadrant = EightWaySymmetricPlot(center, to);
                 circlePixels.insert(std::end(circlePixels),
                         std::begin(quadrant), std::end(quadrant));
                 while (to.y >= to.x) {
@@ -112,7 +123,7 @@ namespace ARKIT
                         d = d + 4*to.x + 6;
                     }
 
-                    quadrant = drawQuadrant(center, to);
+                    quadrant = EightWaySymmetricPlot(center, to);
                     circlePixels.insert(std::end(circlePixels),
                             std::begin(quadrant), std::end(quadrant));
                 }
@@ -125,7 +136,62 @@ namespace ARKIT
                         circle.push_back(*p);
                 }
 
-                return circle;
+                // TODO: Optimize and refactor
+                int q = 0, quadLength = circle.size() / 4;
+                long unsigned int circleSize = circle.size();
+                bool search;
+                std::vector<Pixel> sortedCircle;
+                sortedCircle.push_back(circle.at(0));
+                for (long unsigned int i = 0; i < circleSize; i++) {
+                    if (i != 0 && i % quadLength == 0) q++;
+                    search = true;
+                    for (auto p = circle.begin() + 1; p != circle.end() && search; p++) {
+                        switch (q) {
+                            case 0:
+                                if (((p->x - sortedCircle.back().x) == 1
+                                        || p->x == sortedCircle.back().x)
+                                    && (p->y == sortedCircle.back().y
+                                        || (p->y - sortedCircle.back().y) == 1)) {
+                                    sortedCircle.push_back(*p);
+                                    circle.erase(p);
+                                    search = false;
+                                }
+                                break;
+                            case 1:
+                                if (((p->x - sortedCircle.back().x) == -1
+                                        || p->x == sortedCircle.back().x)
+                                    && (p->y == sortedCircle.back().y
+                                        || (p->y - sortedCircle.back().y) == 1)) {
+                                    sortedCircle.push_back(*p);
+                                    circle.erase(p);
+                                    search = false;
+                                }
+                                break;
+                            case 2:
+                                if (((p->x - sortedCircle.back().x) == -1
+                                        || p->x == sortedCircle.back().x)
+                                    && (p->y == sortedCircle.back().y
+                                        || (p->y - sortedCircle.back().y) == -1)) {
+                                    sortedCircle.push_back(*p);
+                                    circle.erase(p);
+                                    search = false;
+                                }
+                                break;
+                            case 3:
+                                if (((p->x - sortedCircle.back().x) == 1
+                                        || p->x == sortedCircle.back().x)
+                                    && (p->y == sortedCircle.back().y
+                                        || (p->y - sortedCircle.back().y) == -1)) {
+                                    sortedCircle.push_back(*p);
+                                    circle.erase(p);
+                                    search = false;
+                                }
+                                break;
+                        }
+                    }
+                }
+
+                return sortedCircle;
             }
 
             /* Extract N keypoints in the given frame, using the Features from
@@ -147,16 +213,11 @@ namespace ARKIT
                  * 6. Non-maximal suppression
                  */
 
-                std::cout << "FRAME INFO: " << f.width << "x" << f.height << std::endl;
                 for (unsigned int y = this->radius; y < (f.height - this->radius); y++) {
                     for (unsigned int x = this->radius; x < (f.width - this->radius); x++) {
                         Pixel center(x, y);
                         center.value = f.pixels[x*(y+1)].value;
-
                         std::vector<Pixel> circle = this->BresenhamCircle(center, this->radius);
-                        std::cout << "\t-> Circle pixels:" << std::endl;
-                        for (auto p = circle.begin(); p != circle.end(); p++)
-                            std::cout << "[" << p->x << "," << p->y << "],";
 
                         return std::vector<Keypoint>();
                     }
