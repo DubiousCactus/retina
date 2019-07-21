@@ -20,18 +20,18 @@ namespace ARKIT
     struct Pixel {
         int x;
         int y;
-        unsigned char value;
+        unsigned char intensity;
 
         Pixel(int x, int y)
         {
             this->x = x;
             this->y = y;
-            this->value = 0;
+            this->intensity = 0;
         }
 
-        Pixel(unsigned char value)
+        Pixel(unsigned char intensity)
         {
-            this->value = value;
+            this->intensity = intensity;
         }
 
         bool operator() (const Pixel& p) const
@@ -83,6 +83,7 @@ namespace ARKIT
     {
         private:
             unsigned short intensity_threshold;
+            unsigned short contiguous_pixels;
             unsigned short top_n_keypoints;
             unsigned short n_keypoints;
             unsigned short pog_levels;
@@ -213,13 +214,48 @@ namespace ARKIT
                  * 6. Non-maximal suppression
                  */
 
-                for (unsigned int y = this->radius; y < (f.height - this->radius); y++) {
-                    for (unsigned int x = this->radius; x < (f.width - this->radius); x++) {
+                for (unsigned int y = this->radius; y < (f.height - this->radius); y += 3) {
+                    for (unsigned int x = this->radius; x < (f.width - this->radius); x += 3) {
+                        int Ip = f.pixels[x*(y+1)].intensity;
                         Pixel center(x, y);
-                        center.value = f.pixels[x*(y+1)].value;
-                        std::vector<Pixel> circle = this->BresenhamCircle(center, this->radius);
+                        center.intensity = Ip;
 
-                        return std::vector<Keypoint>();
+                        /* High-speed non-corner elimination */
+                        if (this->contiguous_pixels == 12) {
+                            if (f.pixels[x*(y-3+1)].intensity < (Ip + this->intensity_threshold)
+                                    || f.pixels[x*(y+3+1)].intensity
+                                        > (Ip - this->intensity_threshold)) {
+                                // Cannot be a corner
+                                break;
+                            } else if (f.pixels[(x-3)*(y+1)].intensity
+                                    < (Ip + this->intensity_threshold)
+                                    || f.pixels[(x+3)*(y+1)].intensity
+                                        > (Ip - this->intensity_threshold)) {
+                                // Cannot be a corner
+                                break;
+                            } else {
+                                /* At least 3 of those 4 pixels must be brighter
+                                 * than p
+                                 */
+                                std::vector<Pixel> testPixels = {
+                                    f.pixels[x*(y-3+1)], f.pixels[x*(y+3+1)],
+                                    f.pixels[(x-3)*(y+1)], f.pixels[(x+3)*(y+1)]};
+                                int passed = 0;
+                                for (auto p = testPixels.begin(); p <
+                                        testPixels.end() && passed < 3; p++) {
+                                    if (p->intensity > (Ip + this->intensity_threshold)
+                                        || p->intensity < (Ip - this->intensity_threshold))
+                                        passed++;
+                                }
+                                if (passed < 3) {
+                                    // Cannot be a corner
+                                    break;
+                                }
+                            }
+                        }
+
+                        /* Complete corner test */
+                        std::vector<Pixel> circle = this->BresenhamCircle(center, this->radius);
                     }
                 }
 
@@ -250,6 +286,7 @@ namespace ARKIT
             ORBExtractor()
             {
                 this->intensity_threshold = 9;
+                this->contiguous_pixels = 12;
                 this->top_n_keypoints = 50;
                 this->n_keypoints = 150;
                 this->pog_levels = 1;

@@ -27,7 +27,8 @@ int main() {
     frame1.width = image.width();
     frame1.height = image.height();
     for (auto pixel = image.begin(); pixel != image.end(); pixel++)
-        frame1.pixels.push_back(ARKIT::Pixel(pixel[0])); //Only R component for now
+        frame1.pixels.push_back(ARKIT::Pixel(0.33 * pixel[0] + 0.33 * pixel[1] +
+                    0.33 * pixel[2]));
     frame1.channels = image.spectrum();
 
     std::cout << "[*] Extracting features..." << std::endl;
