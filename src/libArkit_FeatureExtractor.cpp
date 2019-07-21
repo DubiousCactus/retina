@@ -38,19 +38,6 @@ namespace ARKIT
         {
             return (p.x == this->x) && (p.y == this->y);
         }
-/*
-        bool operator< (const Pixel& p) const
-        {
-            return ((this->x - p.x) == 1 && this->y == p.y)
-                || ((this->x - p.x) == 1 && this->y < p.y)
-                || (this->x == p.x && this->y < p.y);
-        }*/
-
-        bool operator> (const Pixel& p) const
-        {
-            return (((this->x - p.x) == 1) && (this->y >= p.y))
-                || ((this->x == p.x) && (this->y > p.y));
-        }
     };
 
     struct Frame {
@@ -58,6 +45,11 @@ namespace ARKIT
         unsigned int width;
         unsigned int height;
         int channels;
+
+        Pixel at(int x, int y)
+        {
+            return this->pixels.at((y*this->width)+x);
+        }
     };
 
     struct Keypoint {
@@ -91,6 +83,7 @@ namespace ARKIT
 
             /*
              * Bresenham's circle drawing algorithm
+             * TODO: Add the intensity of the pixels!!
              */
             std::vector<Pixel> BresenhamCircle(Pixel center, int radius)
             {
@@ -217,20 +210,21 @@ namespace ARKIT
 
                 for (unsigned int y = this->radius; y < (f.height - this->radius); y++) {
                     for (unsigned int x = this->radius; x < (f.width - this->radius); x++) {
-                        int Ip = f.pixels[x*(y+1)].intensity;
+                        int Ip = f.at(x,y).intensity;
                         Pixel center(x, y);
                         center.intensity = Ip;
 
                         /* High-speed non-corner elimination */
                         if (this->contiguous_pixels == 12) {
-                            if (f.pixels[x*(y-3+1)].intensity < (Ip + this->intensity_threshold)
-                                    || f.pixels[x*(y+3+1)].intensity
+                            if (f.at(x,y-3).intensity < (Ip +
+                                        this->intensity_threshold)
+                                    || f.at(x, y+3).intensity
                                         > (Ip - this->intensity_threshold)) {
                                 // Cannot be a corner
                                 break;
-                            } else if (f.pixels[(x-3)*(y+1)].intensity
+                            } else if (f.at(x-3, y).intensity
                                     < (Ip + this->intensity_threshold)
-                                    || f.pixels[(x+3)*(y+1)].intensity
+                                    || f.at(x+3, y).intensity
                                         > (Ip - this->intensity_threshold)) {
                                 // Cannot be a corner
                                 break;
@@ -239,8 +233,8 @@ namespace ARKIT
                                  * than p
                                  */
                                 std::vector<Pixel> testPixels = {
-                                    f.pixels[x*(y-3+1)], f.pixels[x*(y+3+1)],
-                                    f.pixels[(x-3)*(y+1)], f.pixels[(x+3)*(y+1)]};
+                                    f.at(x, y-3), f.at(x, y+3),
+                                    f.at(x-3, y), f.at(x+3, y)};
                                 int passed = 0;
                                 for (auto p = testPixels.begin(); p <
                                         testPixels.end() && passed < 3; p++) {
@@ -266,9 +260,9 @@ namespace ARKIT
                         };
                         bool corner = false;
                         for (int i = 0; i < (int)circle.size(); i++) {
-                            std::vector<Pixel> contiguousPixels;
+                            std::vector<Pixel> contiguousPixels = {};
                             for (int j = 0; j < this->contiguous_pixels; j++)
-                                contiguousPixels.push_back(GetPixelWithOverflow(circle, j));
+                                contiguousPixels.push_back(GetPixelWithOverflow(circle, i+j));
 
                             bool brighter = true, darker = true;
                             for (auto p = contiguousPixels.begin(); p !=
