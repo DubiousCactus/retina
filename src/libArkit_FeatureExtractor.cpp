@@ -29,6 +29,13 @@ namespace ARKIT
             this->intensity = 0;
         }
 
+        Pixel(int x, int y, unsigned char i)
+        {
+            this->x = x;
+            this->y = y;
+            this->intensity = i;
+        }
+
         Pixel(unsigned char intensity)
         {
             this->intensity = intensity;
@@ -46,8 +53,10 @@ namespace ARKIT
         unsigned int height;
         int channels;
 
-        Pixel at(int x, int y)
+        Pixel at(unsigned int x, unsigned int y)
         {
+            if (x < 0 || y < 0 || x >= this->width || y >= this->height)
+                return 0;
             return this->pixels.at((y*this->width)+x);
         }
     };
@@ -83,29 +92,36 @@ namespace ARKIT
 
             /*
              * Bresenham's circle drawing algorithm
-             * TODO: Add the intensity of the pixels!!
              */
-            std::vector<Pixel> BresenhamCircle(Pixel center, int radius)
+            std::vector<Pixel> BresenhamCircle(Pixel center, int radius, Frame frame)
             {
                 std::vector<Pixel> circlePixels;
                 Pixel to(0, radius);
                 int d = 3 - (2 * radius);
 
-                auto EightWaySymmetricPlot = [] (Pixel c, Pixel t) { 
+                auto EightWaySymmetricPlot = [] (Pixel c, Pixel t, Frame f) { 
                     std::vector<Pixel> quadrant;
-                    quadrant.push_back(Pixel(c.x + t.x, c.y - t.y));
-                    quadrant.push_back(Pixel(c.x + t.x, c.y + t.y));
-                    quadrant.push_back(Pixel(c.x - t.x, c.y + t.y));
-                    quadrant.push_back(Pixel(c.x - t.x, c.y - t.y));
-                    quadrant.push_back(Pixel(c.x + t.y, c.y + t.x));
-                    quadrant.push_back(Pixel(c.x - t.y, c.y + t.x));
-                    quadrant.push_back(Pixel(c.x + t.y, c.y - t.x));
-                    quadrant.push_back(Pixel(c.x - t.y, c.y - t.x));
+                    quadrant.push_back(Pixel(c.x + t.x, c.y - t.y, f.at(c.x
+                                    + t.x, c.y - t.y).intensity));
+                    quadrant.push_back(Pixel(c.x + t.x, c.y + t.y, f.at(c.x
+                                    + t.x, c.y + t.y).intensity));
+                    quadrant.push_back(Pixel(c.x - t.x, c.y + t.y, f.at(c.x
+                                    - t.x, c.y + t.y).intensity));
+                    quadrant.push_back(Pixel(c.x - t.x, c.y - t.y, f.at(c.x
+                                    - t.x, c.y - t.y).intensity));
+                    quadrant.push_back(Pixel(c.x + t.y, c.y + t.x, f.at(c.x
+                                    + t.y, c.y + t.x).intensity));
+                    quadrant.push_back(Pixel(c.x - t.y, c.y + t.x, f.at(c.x
+                                    - t.y, c.y + t.x).intensity));
+                    quadrant.push_back(Pixel(c.x + t.y, c.y - t.x, f.at(c.x
+                                    + t.y, c.y - t.x).intensity));
+                    quadrant.push_back(Pixel(c.x - t.y, c.y - t.x, f.at(c.x
+                                    - t.y, c.y - t.x).intensity));
 
                     return quadrant;
                 };
 
-                auto quadrant = EightWaySymmetricPlot(center, to);
+                auto quadrant = EightWaySymmetricPlot(center, to, frame);
                 circlePixels.insert(std::end(circlePixels),
                         std::begin(quadrant), std::end(quadrant));
                 while (to.y >= to.x) {
@@ -117,7 +133,7 @@ namespace ARKIT
                         d = d + 4*to.x + 6;
                     }
 
-                    quadrant = EightWaySymmetricPlot(center, to);
+                    quadrant = EightWaySymmetricPlot(center, to, frame);
                     circlePixels.insert(std::end(circlePixels),
                             std::begin(quadrant), std::end(quadrant));
                 }
@@ -250,11 +266,11 @@ namespace ARKIT
                         }
 
                         /* Complete corner test */
-                        std::vector<Pixel> circle = this->BresenhamCircle(center, this->radius);
-                        auto GetPixelWithOverflow = [] (std::vector<Pixel> v, int i) {
-                            int circleSize = v.size();
+                        std::vector<Pixel> circle = this->BresenhamCircle(center, this->radius, f);
+                        auto GetPixelWithOverflow = [] (std::vector<Pixel> v, unsigned long int i) {
+                            unsigned long int circleSize = v.size();
                             if (i >= circleSize)
-                                return v.at(circleSize - i);
+                                return v.at(i - circleSize);
                             else
                                 return v.at(i);
                         };
