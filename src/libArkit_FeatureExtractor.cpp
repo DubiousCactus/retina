@@ -5,6 +5,7 @@
  * Distributed under terms of the MIT license.
  */
 
+#include <algorithm>
 #include <iostream>
 #include <vector>
 
@@ -31,6 +32,11 @@ namespace ARKIT
         Pixel(unsigned char value)
         {
             this->value = value;
+        }
+
+        bool operator() (const Pixel& p) const
+        {
+            return (p.x == this->x) && (p.y == this->y);
         }
     };
 
@@ -111,7 +117,15 @@ namespace ARKIT
                             std::begin(quadrant), std::end(quadrant));
                 }
 
-                return circlePixels;
+                /* Remove duplicates  and reorder */
+                std::vector<Pixel> circle;
+                for (auto p = circlePixels.begin(); p != circlePixels.end(); p++) {
+                    if (std::find_if(circle.begin(), circle.end(), Pixel(p->x,
+                                    p->y)) == circle.end())
+                        circle.push_back(*p);
+                }
+
+                return circle;
             }
 
             /* Extract N keypoints in the given frame, using the Features from
