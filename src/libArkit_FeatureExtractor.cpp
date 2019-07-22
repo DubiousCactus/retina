@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <iostream>
 #include <vector>
+#include <cassert>
 
 namespace ARKIT
 {
@@ -22,6 +23,12 @@ namespace ARKIT
         int y;
         unsigned char intensity;
 
+        Pixel()
+        {
+            this->x = 0;
+            this->y = 0;
+            this->intensity = 0;
+        }
         Pixel(int x, int y)
         {
             this->x = x;
@@ -53,11 +60,29 @@ namespace ARKIT
         unsigned int height;
         int channels;
 
-        Pixel at(unsigned int x, unsigned int y)
+        Frame()
         {
-            if (x < 0 || y < 0 || x >= this->width || y >= this->height)
-                return 0;
+            this->width = 0;
+            this->height = 0;
+        }
+
+        Frame(unsigned int width, unsigned int height)
+        {
+            this->width = width;
+            this->height = height;
+            this->pixels.reserve(width*height);
+        }
+
+        Pixel& at(unsigned int x, unsigned int y)
+        {
+            assert (x >= 0 && y >= 0 && x < this->width && y < this->height);
             return this->pixels.at((y*this->width)+x);
+        }
+
+        void writeAt(unsigned int x, unsigned int y, unsigned char val)
+        {
+            assert (x >= 0 && y >= 0 && x < this->width && y < this->height);
+            this->pixels.at((y*this->width)+x).intensity = val;
         }
     };
 
@@ -74,9 +99,10 @@ namespace ARKIT
         protected:
             std::vector<FeatureDescriptor> features;
             std::vector<Keypoint> keypoints;
+            Frame* frame;
 
         public:
-            virtual void Extract(Frame f)=0;
+            virtual void Extract()=0;
     };
 
 
@@ -93,37 +119,28 @@ namespace ARKIT
             /*
              * Bresenham's circle drawing algorithm
              */
-            std::vector<Pixel> BresenhamCircle(Pixel center, int radius, Frame frame)
+            std::vector<Pixel> BresenhamCircle(Pixel center, int radius, Frame* frame)
             {
                 std::vector<Pixel> circlePixels;
+                circlePixels.reserve(radius*8);
                 Pixel to(0, radius);
                 int d = 3 - (2 * radius);
 
-                auto EightWaySymmetricPlot = [] (Pixel c, Pixel t, Frame f) { 
-                    std::vector<Pixel> quadrant;
-                    quadrant.push_back(Pixel(c.x + t.x, c.y - t.y, f.at(c.x
-                                    + t.x, c.y - t.y).intensity));
-                    quadrant.push_back(Pixel(c.x + t.x, c.y + t.y, f.at(c.x
-                                    + t.x, c.y + t.y).intensity));
-                    quadrant.push_back(Pixel(c.x - t.x, c.y + t.y, f.at(c.x
-                                    - t.x, c.y + t.y).intensity));
-                    quadrant.push_back(Pixel(c.x - t.x, c.y - t.y, f.at(c.x
-                                    - t.x, c.y - t.y).intensity));
-                    quadrant.push_back(Pixel(c.x + t.y, c.y + t.x, f.at(c.x
-                                    + t.y, c.y + t.x).intensity));
-                    quadrant.push_back(Pixel(c.x - t.y, c.y + t.x, f.at(c.x
-                                    - t.y, c.y + t.x).intensity));
-                    quadrant.push_back(Pixel(c.x + t.y, c.y - t.x, f.at(c.x
-                                    + t.y, c.y - t.x).intensity));
-                    quadrant.push_back(Pixel(c.x - t.y, c.y - t.x, f.at(c.x
-                                    - t.y, c.y - t.x).intensity));
-
-                    return quadrant;
+                // TODO: Write coordinates only, retrieve pixel later from the
+                // frame!
+                auto EightWaySymmetricPlot = [] (Pixel c, Pixel t, Frame* f,
+                        std::vector<Pixel>& circle) { 
+                    circle.push_back(f->at(c.x + t.x, c.y - t.y));
+                    circle.push_back(f->at(c.x + t.x, c.y + t.y));
+                    circle.push_back(f->at(c.x - t.x, c.y + t.y));
+                    circle.push_back(f->at(c.x - t.x, c.y - t.y));
+                    circle.push_back(f->at(c.x + t.y, c.y + t.x));
+                    circle.push_back(f->at(c.x - t.y, c.y + t.x));
+                    circle.push_back(f->at(c.x + t.y, c.y - t.x));
+                    circle.push_back(f->at(c.x - t.y, c.y - t.x));
                 };
 
-                auto quadrant = EightWaySymmetricPlot(center, to, frame);
-                circlePixels.insert(std::end(circlePixels),
-                        std::begin(quadrant), std::end(quadrant));
+                EightWaySymmetricPlot(center, to, frame, circlePixels);
                 while (to.y >= to.x) {
                     to.x++;
                     if (d > 0) {
@@ -133,13 +150,12 @@ namespace ARKIT
                         d = d + 4*to.x + 6;
                     }
 
-                    quadrant = EightWaySymmetricPlot(center, to, frame);
-                    circlePixels.insert(std::end(circlePixels),
-                            std::begin(quadrant), std::end(quadrant));
+                    EightWaySymmetricPlot(center, to, frame, circlePixels);
                 }
 
                 /* Remove duplicates  and reorder */
                 std::vector<Pixel> circle;
+                circle.reserve(radius*8);
                 for (auto p = circlePixels.begin(); p != circlePixels.end(); p++) {
                     if (std::find_if(circle.begin(), circle.end(), Pixel(p->x,
                                     p->y)) == circle.end())
@@ -208,7 +224,7 @@ namespace ARKIT
              * Accelerated Segment Test algorithm with a given circular radius
              * (threshold)
              */
-            std::vector<Keypoint> FAST(Frame f)
+            std::vector<Keypoint> FAST(Frame* f)
             {
                 std::cout << "\t-> Extracting keypoints (FAST)..." << std::endl;
                 /*
@@ -224,50 +240,52 @@ namespace ARKIT
                  */
                 int keypoints = 0;
 
-                for (unsigned int y = this->radius; y < (f.height - this->radius); y++) {
-                    for (unsigned int x = this->radius; x < (f.width - this->radius); x++) {
-                        int Ip = f.at(x,y).intensity;
+                for (unsigned int y = this->radius; y < (f->height - this->radius); y++) {
+                    for (unsigned int x = this->radius; x < (f->width - this->radius); x++) {
+                        int Ip = f->at(x,y).intensity;
                         Pixel center(x, y);
                         center.intensity = Ip;
 
                         /* High-speed non-corner elimination */
+                        int upperBound = Ip + this->intensity_threshold;
+                        int lowerBound = Ip - this->intensity_threshold;
                         if (this->contiguous_pixels == 12) {
-                            if (f.at(x,y-3).intensity < (Ip +
-                                        this->intensity_threshold)
-                                    || f.at(x, y+3).intensity
-                                        > (Ip - this->intensity_threshold)) {
+                            if ((f->at(x,y-3).intensity <= upperBound
+                                && f->at(x,y-3).intensity >= lowerBound)
+                                || (f->at(x, y+3).intensity <= upperBound
+                                && f->at(x, y+3).intensity >= lowerBound)) {
                                 // Cannot be a corner
-                                break;
-                            } else if (f.at(x-3, y).intensity
-                                    < (Ip + this->intensity_threshold)
-                                    || f.at(x+3, y).intensity
-                                        > (Ip - this->intensity_threshold)) {
+                                continue;
+                            } else if ((f->at(x-3,y).intensity <= upperBound
+                                && f->at(x-3,y).intensity >= lowerBound)
+                                || (f->at(x+3, y).intensity <= upperBound
+                                && f->at(x+3, y).intensity >= lowerBound)) {
                                 // Cannot be a corner
-                                break;
-                            } else {
+                                continue;
+                            } else { // TODO: Do this for all pixels even if n != 12
                                 /* At least 3 of those 4 pixels must be brighter
                                  * than p
                                  */
                                 std::vector<Pixel> testPixels = {
-                                    f.at(x, y-3), f.at(x, y+3),
-                                    f.at(x-3, y), f.at(x+3, y)};
+                                    f->at(x, y-3), f->at(x, y+3),
+                                    f->at(x-3, y), f->at(x+3, y)};
                                 int passed = 0;
-                                for (auto p = testPixels.begin(); p <
+                                for (auto p = testPixels.begin(); p !=
                                         testPixels.end() && passed < 3; p++) {
-                                    if (p->intensity > (Ip + this->intensity_threshold)
-                                        || p->intensity < (Ip - this->intensity_threshold))
+                                    if (p->intensity > upperBound
+                                        || p->intensity < lowerBound)
                                         passed++;
                                 }
                                 if (passed < 3) {
                                     // Cannot be a corner
-                                    break;
+                                    continue;
                                 }
                             }
                         }
 
                         /* Complete corner test */
-                        std::vector<Pixel> circle = this->BresenhamCircle(center, this->radius, f);
-                        auto GetPixelWithOverflow = [] (std::vector<Pixel> v, unsigned long int i) {
+                        auto circle = this->BresenhamCircle(center, this->radius, f);
+                        auto GetPixelWithOverflow = [] (std::vector<Pixel>& v, unsigned long int i) {
                             unsigned long int circleSize = v.size();
                             if (i >= circleSize)
                                 return v.at(i - circleSize);
@@ -276,14 +294,15 @@ namespace ARKIT
                         };
                         bool corner = false;
                         for (int i = 0; i < (int)circle.size(); i++) {
-                            std::vector<Pixel> contiguousPixels = {};
+                            std::vector<Pixel> contiguousPixels;
+                            contiguousPixels.reserve(this->contiguous_pixels);
                             for (int j = 0; j < this->contiguous_pixels; j++)
                                 contiguousPixels.push_back(GetPixelWithOverflow(circle, i+j));
 
                             bool brighter = true, darker = true;
                             for (auto p = contiguousPixels.begin(); p !=
                                     contiguousPixels.end(); p++) {
-                                if (p->intensity <= (Ip + this->intensity_threshold)) {
+                                if (p->intensity <= upperBound) {
                                     brighter = false;
                                     break;
                                 }
@@ -296,7 +315,7 @@ namespace ARKIT
 
                             for (auto p = contiguousPixels.begin(); p !=
                                     contiguousPixels.end(); p++) {
-                                if (p->intensity >= (Ip - this->intensity_threshold)) {
+                                if (p->intensity >= lowerBound) {
                                     darker = false;
                                     break;
                                 }
@@ -308,12 +327,17 @@ namespace ARKIT
                             }
                         }
 
-                        if (corner)
+                        if (corner) {
                             keypoints++;
+                            for (auto p = circle.begin(); p != circle.end(); p++)
+                                f->writeAt(p->x, p->y, 0);
+                        }
                     }
                 }
 
                 std::cout<< "\t-> Found " << keypoints << " keypoints" << std::endl;
+
+                this->frame = f;
 
                 return std::vector<Keypoint>();
             }
@@ -327,11 +351,11 @@ namespace ARKIT
             }
 
             /* Build a scale pyramid of the base image */
-            ScalePyramid BuildPyramid(Frame f)
+            ScalePyramid BuildPyramid()
             {
                 ScalePyramid pyramid;
                 for (unsigned short i = 0; i < this->pog_levels; i++)
-                    pyramid.scales.push_back(f);
+                    pyramid.scales.push_back(*this->frame);
 
                 return pyramid;
             }
@@ -339,7 +363,7 @@ namespace ARKIT
             float IntensityCentroid();
 
         public:
-            ORBExtractor()
+            ORBExtractor(Frame& f)
             {
                 this->intensity_threshold = 9;
                 this->contiguous_pixels = 12;
@@ -347,10 +371,11 @@ namespace ARKIT
                 this->n_keypoints = 150;
                 this->pog_levels = 1;
                 this->radius = 3; // For a circle of 16 pixels
+                this->frame = &f;
             }
             ~ORBExtractor() {}
 
-            void Extract(Frame f)
+            void Extract()
             {
                 /*
                  * 1. Build the PoG to produce multiscale-features
@@ -359,13 +384,19 @@ namespace ARKIT
                  */
 
                 // STEP 1: Build the scale pyramid of the current frame
-                std::cout << "\t-> Building the pyramid" << std::endl;
-                ScalePyramid pyramid = this->BuildPyramid(f);
+                this->FAST(this->frame);
+                /*std::cout << "\t-> Building the pyramid" << std::endl;
+                ScalePyramid pyramid = this->BuildPyramid();
                 // STEP 2: for each level of the PoG
                 for (unsigned short i = 0; i < this->pog_levels; i++) {
                     std::vector<Keypoint> keypoints = this->HarrisFilter(
                             this->FAST(pyramid.scales[i]));
-                }
+                }*/
+            }
+
+            Frame GetAnnotatedFrame()
+            {
+                return *this->frame;
             }
 
             std::vector<Keypoint> GetKeypoints()

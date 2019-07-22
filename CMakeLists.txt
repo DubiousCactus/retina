@@ -13,7 +13,7 @@ add_executable(${PROJECT_NAME} src/libArkit_FeatureExtractor.cpp src/main.cpp)
 
 target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
 
-set(YOU_NEED_X11 0)
+set(YOU_NEED_X11 1)
 set(YOU_NEED_PNG 0)
 set(YOU_NEED_JPG 1)
 
