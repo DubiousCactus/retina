@@ -9,6 +9,7 @@
 #include <iostream>
 #include <vector>
 #include <cassert>
+#include <chrono>
 
 namespace ARKIT
 {
@@ -75,13 +76,13 @@ namespace ARKIT
 
         Pixel& at(unsigned int x, unsigned int y)
         {
-            assert (x >= 0 && y >= 0 && x < this->width && y < this->height);
+            assert (x < this->width && y < this->height);
             return this->pixels.at((y*this->width)+x);
         }
 
         void writeAt(unsigned int x, unsigned int y, unsigned char val)
         {
-            assert (x >= 0 && y >= 0 && x < this->width && y < this->height);
+            assert (x < this->width && y < this->height);
             this->pixels.at((y*this->width)+x).intensity = val;
         }
     };
@@ -91,7 +92,7 @@ namespace ARKIT
     };
 
     struct ScalePyramid {
-        std::vector<Frame> scales;
+        std::vector<Frame*> scales;
     };
 
     class FeatureExtractor
@@ -109,6 +110,7 @@ namespace ARKIT
     class ORBExtractor: FeatureExtractor
     {
         private:
+            bool full_high_speed_test;
             unsigned short intensity_threshold;
             unsigned short contiguous_pixels;
             unsigned short top_n_keypoints;
@@ -126,8 +128,6 @@ namespace ARKIT
                 Pixel to(0, radius);
                 int d = 3 - (2 * radius);
 
-                // TODO: Write coordinates only, retrieve pixel later from the
-                // frame!
                 auto EightWaySymmetricPlot = [] (Pixel c, Pixel t, Frame* f,
                         std::vector<Pixel>& circle) { 
                     circle.push_back(f->at(c.x + t.x, c.y - t.y));
@@ -167,6 +167,7 @@ namespace ARKIT
                 long unsigned int circleSize = circle.size();
                 bool search;
                 std::vector<Pixel> sortedCircle;
+                sortedCircle.reserve(8*radius);
                 sortedCircle.push_back(circle.at(0));
                 for (long unsigned int i = 0; i < circleSize; i++) {
                     if (i != 0 && i % quadLength == 0) q++;
@@ -240,8 +241,8 @@ namespace ARKIT
                  */
                 int keypoints = 0;
 
-                for (unsigned int y = this->radius; y < (f->height - this->radius); y++) {
-                    for (unsigned int x = this->radius; x < (f->width - this->radius); x++) {
+                for (unsigned int y = this->radius; y < (f->height - this->radius); y+=3) {
+                    for (unsigned int x = this->radius; x < (f->width - this->radius); x+=3) {
                         int Ip = f->at(x,y).intensity;
                         Pixel center(x, y);
                         center.intensity = Ip;
@@ -250,37 +251,36 @@ namespace ARKIT
                         int upperBound = Ip + this->intensity_threshold;
                         int lowerBound = Ip - this->intensity_threshold;
                         if (this->contiguous_pixels == 12) {
-                            if ((f->at(x,y-3).intensity <= upperBound
-                                && f->at(x,y-3).intensity >= lowerBound)
-                                || (f->at(x, y+3).intensity <= upperBound
-                                && f->at(x, y+3).intensity >= lowerBound)) {
-                                // Cannot be a corner
-                                continue;
-                            } else if ((f->at(x-3,y).intensity <= upperBound
-                                && f->at(x-3,y).intensity >= lowerBound)
-                                || (f->at(x+3, y).intensity <= upperBound
-                                && f->at(x+3, y).intensity >= lowerBound)) {
-                                // Cannot be a corner
-                                continue;
-                            } else { // TODO: Do this for all pixels even if n != 12
-                                /* At least 3 of those 4 pixels must be brighter
-                                 * than p
-                                 */
-                                std::vector<Pixel> testPixels = {
-                                    f->at(x, y-3), f->at(x, y+3),
-                                    f->at(x-3, y), f->at(x+3, y)};
-                                int passed = 0;
-                                for (auto p = testPixels.begin(); p !=
-                                        testPixels.end() && passed < 3; p++) {
-                                    if (p->intensity > upperBound
-                                        || p->intensity < lowerBound)
-                                        passed++;
-                                }
-                                if (passed < 3) {
-                                    // Cannot be a corner
+                            if (this->full_high_speed_test) {
+                                if ((f->at(x,y-3).intensity <= upperBound
+                                            && f->at(x,y-3).intensity >= lowerBound)
+                                        || (f->at(x, y+3).intensity <= upperBound
+                                            && f->at(x, y+3).intensity >= lowerBound)) {
+                                    //Cannot be a corner
+                                    continue;
+                                } else if ((f->at(x-3,y).intensity <= upperBound
+                                            && f->at(x-3,y).intensity >= lowerBound)
+                                        || (f->at(x+3, y).intensity <= upperBound
+                                            && f->at(x+3, y).intensity >= lowerBound)) {
+                                    //Cannot be a corner
                                     continue;
                                 }
                             }
+                            /* At least 3 of those 4 pixels must be brighter than p */
+                            std::vector<Pixel> testPixels = {
+                                f->at(x, y-3), f->at(x, y+3),
+                                f->at(x-3, y), f->at(x+3, y)
+                            };
+                            bool allAbove = true, allBelow = true;
+                            for (auto p = testPixels.begin(); p != testPixels.end(); p++) {
+                                if (p->intensity <= upperBound)
+                                    allAbove = false;
+                                if (p->intensity >= lowerBound)
+                                    allBelow = false;
+                            }
+
+                            if (!allAbove && !allBelow)
+                                continue;
                         }
 
                         /* Complete corner test */
@@ -355,7 +355,7 @@ namespace ARKIT
             {
                 ScalePyramid pyramid;
                 for (unsigned short i = 0; i < this->pog_levels; i++)
-                    pyramid.scales.push_back(*this->frame);
+                    pyramid.scales.push_back(this->frame);
 
                 return pyramid;
             }
@@ -365,6 +365,7 @@ namespace ARKIT
         public:
             ORBExtractor(Frame& f)
             {
+                this->full_high_speed_test = false;
                 this->intensity_threshold = 9;
                 this->contiguous_pixels = 12;
                 this->top_n_keypoints = 50;
@@ -383,15 +384,22 @@ namespace ARKIT
                  * 3. Apply Harris corner measure to find the top N points
                  */
 
-                // STEP 1: Build the scale pyramid of the current frame
+                auto start = std::chrono::steady_clock::now();
                 this->FAST(this->frame);
+                auto end = std::chrono::steady_clock::now();
+                std::cout << "[*] FAST executed in "
+                    <<
+                    (float)std::chrono::duration_cast<std::chrono::microseconds>(end
+                            - start).count()/1000
+                    << " milliseconds" << std::endl;
+                // STEP 1: Build the scale pyramid of the current frame
                 /*std::cout << "\t-> Building the pyramid" << std::endl;
                 ScalePyramid pyramid = this->BuildPyramid();
                 // STEP 2: for each level of the PoG
                 for (unsigned short i = 0; i < this->pog_levels; i++) {
                     std::vector<Keypoint> keypoints = this->HarrisFilter(
-                            this->FAST(pyramid.scales[i]));
-                }*/
+                            this->FAST(pyramid.scales.at(i)));*/
+                //}
             }
 
             Frame GetAnnotatedFrame()
