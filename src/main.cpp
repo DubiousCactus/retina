@@ -16,7 +16,7 @@
 using namespace cimg_library;
 
 int main() {
-    CImg<unsigned char> image("lena.jpg");
+    CImg<unsigned char> image("shapes.jpg");
 
     ARKIT::Frame frame1(image.width(), image.height());
     for (int y = 0; y < image.height(); y++)

@@ -220,14 +220,14 @@ namespace ARKIT
 
                 return sortedCircle;
             }
-
+ 
             /* Extract N keypoints in the given frame, using the Features from
              * Accelerated Segment Test algorithm with a given circular radius
              * (threshold)
              */
             std::vector<Keypoint> FAST(Frame* f)
             {
-                std::cout << "\t-> Extracting keypoints (FAST)..." << std::endl;
+                //std::cout << "\t-> Extracting keypoints (FAST)..." << std::endl;
                 /*
                  * 1. Select a pixel P in the image, with intensity I
                  * 2. Select appropriate threshold value t
@@ -241,8 +241,8 @@ namespace ARKIT
                  */
                 int keypoints = 0;
 
-                for (unsigned int y = this->radius; y < (f->height - this->radius); y+=3) {
-                    for (unsigned int x = this->radius; x < (f->width - this->radius); x+=3) {
+                for (unsigned int y = this->radius; y < (f->height - this->radius); y++) {
+                    for (unsigned int x = this->radius; x < (f->width - this->radius); x++) {
                         int Ip = f->at(x,y).intensity;
                         Pixel center(x, y);
                         center.intensity = Ip;
@@ -336,8 +336,6 @@ namespace ARKIT
                 }
 
                 std::cout<< "\t-> Found " << keypoints << " keypoints" << std::endl;
-
-                this->frame = f;
 
                 return std::vector<Keypoint>();
             }
