@@ -20,7 +20,6 @@ namespace ARKIT
     class StreamParser
     {
         private:
-            //Frame *frame;
             AVCodecParserContext *parser; 
             AVCodecContext *context;
             AVFrame *frame;
@@ -28,6 +27,31 @@ namespace ARKIT
             std::ifstream file;
             uint8_t inbuf[INBUF_SIZE + AV_INPUT_BUFFER_PADDING_SIZE];
             uint8_t *data;
+
+            Frame* Decode()
+            {
+                int ret;
+
+                ret = avcodec_send_packet(this->context, this->pkt);
+                if (ret < 0) {
+                    std::cerr << "Error sending a packet for decoding" << std::endl;
+                    exit(1);
+                }
+
+                while (ret >= 0) {
+                    ret = avcodec_receive_frame(this->context, this->frame);
+                    if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+                        return NULL;
+                    else if (ret < 0) {
+                        std::cerr << "Error during decoding" << std::endl;
+                        exit(1);
+                    }
+
+                    Frame f(frame->data[0], frame->width, frame->height);
+
+                    return &f;
+                }
+            }
 
         public:
             /* MPEG-1 codec */
@@ -77,6 +101,9 @@ namespace ARKIT
 
             Frame* NextFrame()
             {
+                size_t bytes_read;
+                int ret;
+
                 if (this->file.eof()) {
                     return NULL;
                 }
@@ -84,9 +111,9 @@ namespace ARKIT
 
                 /* Split the data into frames */
                 this->data = this->inbuf;
-                size_t bytes_read = file.gcount();
+                bytes_read = file.gcount();
                 while (bytes_read > 0) {
-                    int ret = av_parser_parse2(this->parser, this->context,
+                    ret = av_parser_parse2(this->parser, this->context,
                             &this->pkt->data, &this->pkt->size, data,
                             bytes_read, AV_NOPTS_VALUE, AV_NOPTS_VALUE, 0);
                     if (ret < 0) {
@@ -96,9 +123,10 @@ namespace ARKIT
                     data += ret;
                     bytes_read -= ret;
 
-                    //if (pkt->size)
-                        //decode(this->context, this->frame, outfilename);
+                    if (pkt->size)
+                        return this->Decode();
                 }
             }
+
     };
 }

@@ -11,80 +11,14 @@
 #include <cassert>
 #include <chrono>
 
+#include "libArkit_Frame.cpp"
+
 namespace ARKIT
 {
 
     struct FeatureDescriptor {
         int x;
         int y;
-    };
-
-    struct Pixel {
-        int x;
-        int y;
-        unsigned char intensity;
-
-        Pixel()
-        {
-            this->x = 0;
-            this->y = 0;
-            this->intensity = 0;
-        }
-        Pixel(int x, int y)
-        {
-            this->x = x;
-            this->y = y;
-            this->intensity = 0;
-        }
-
-        Pixel(int x, int y, unsigned char i)
-        {
-            this->x = x;
-            this->y = y;
-            this->intensity = i;
-        }
-
-        Pixel(unsigned char intensity)
-        {
-            this->intensity = intensity;
-        }
-
-        bool operator() (const Pixel& p) const
-        {
-            return (p.x == this->x) && (p.y == this->y);
-        }
-    };
-
-    struct Frame {
-        std::vector<Pixel> pixels;
-        unsigned int width;
-        unsigned int height;
-        int channels;
-
-        Frame()
-        {
-            this->width = 0;
-            this->height = 0;
-        }
-
-        Frame(unsigned int width, unsigned int height)
-        {
-            this->width = width;
-            this->height = height;
-            this->pixels.reserve(width*height);
-        }
-
-        Pixel& at(unsigned int x, unsigned int y)
-        {
-            assert (x < this->width && y < this->height);
-            return this->pixels.at((y*this->width)+x);
-        }
-
-        void writeAt(unsigned int x, unsigned int y, unsigned char val)
-        {
-            assert (x < this->width && y < this->height);
-            this->pixels.at((y*this->width)+x).intensity = val;
-        }
     };
 
     struct Keypoint {
@@ -121,23 +55,23 @@ namespace ARKIT
             /*
              * Bresenham's circle drawing algorithm
              */
-            std::vector<Pixel> BresenhamCircle(Pixel center, int radius, Frame* frame)
+            std::vector<Pixel*> BresenhamCircle(Pixel center, int radius, Frame* frame)
             {
-                std::vector<Pixel> circlePixels;
+                std::vector<Pixel*> circlePixels;
                 circlePixels.reserve(radius*8);
                 Pixel to(0, radius);
                 int d = 3 - (2 * radius);
 
                 auto EightWaySymmetricPlot = [] (Pixel c, Pixel t, Frame* f,
-                        std::vector<Pixel>& circle) { 
-                    circle.push_back(f->at(c.x + t.x, c.y - t.y));
-                    circle.push_back(f->at(c.x + t.x, c.y + t.y));
-                    circle.push_back(f->at(c.x - t.x, c.y + t.y));
-                    circle.push_back(f->at(c.x - t.x, c.y - t.y));
-                    circle.push_back(f->at(c.x + t.y, c.y + t.x));
-                    circle.push_back(f->at(c.x - t.y, c.y + t.x));
-                    circle.push_back(f->at(c.x + t.y, c.y - t.x));
-                    circle.push_back(f->at(c.x - t.y, c.y - t.x));
+                        std::vector<Pixel*>& circle) { 
+                    circle.push_back(f->PixelAt(c.x + t.x, c.y - t.y));
+                    circle.push_back(f->PixelAt(c.x + t.x, c.y + t.y));
+                    circle.push_back(f->PixelAt(c.x - t.x, c.y + t.y));
+                    circle.push_back(f->PixelAt(c.x - t.x, c.y - t.y));
+                    circle.push_back(f->PixelAt(c.x + t.y, c.y + t.x));
+                    circle.push_back(f->PixelAt(c.x - t.y, c.y + t.x));
+                    circle.push_back(f->PixelAt(c.x + t.y, c.y - t.x));
+                    circle.push_back(f->PixelAt(c.x - t.y, c.y - t.x));
                 };
 
                 EightWaySymmetricPlot(center, to, frame, circlePixels);
@@ -154,11 +88,11 @@ namespace ARKIT
                 }
 
                 /* Remove duplicates  and reorder */
-                std::vector<Pixel> circle;
+                std::vector<Pixel*> circle;
                 circle.reserve(radius*8);
                 for (auto p = circlePixels.begin(); p != circlePixels.end(); p++) {
-                    if (std::find_if(circle.begin(), circle.end(), Pixel(p->x,
-                                    p->y)) == circle.end())
+                    if (std::find_if(circle.begin(), circle.end(), Pixel((*p)->x,
+                                    (*p)->y)) == circle.end())
                         circle.push_back(*p);
                 }
 
@@ -166,7 +100,7 @@ namespace ARKIT
                 int q = 0, quadLength = circle.size() / 4;
                 long unsigned int circleSize = circle.size();
                 bool search;
-                std::vector<Pixel> sortedCircle;
+                std::vector<Pixel*> sortedCircle;
                 sortedCircle.reserve(8*radius);
                 sortedCircle.push_back(circle.at(0));
                 for (long unsigned int i = 0; i < circleSize; i++) {
@@ -175,40 +109,40 @@ namespace ARKIT
                     for (auto p = circle.begin() + 1; p != circle.end() && search; p++) {
                         switch (q) {
                             case 0:
-                                if (((p->x - sortedCircle.back().x) == 1
-                                        || p->x == sortedCircle.back().x)
-                                    && (p->y == sortedCircle.back().y
-                                        || (p->y - sortedCircle.back().y) == 1)) {
+                                if ((((*p)->x - sortedCircle.back()->x) == 1
+                                        || (*p)->x == sortedCircle.back()->x)
+                                    && ((*p)->y == sortedCircle.back()->y
+                                        || ((*p)->y - sortedCircle.back()->y) == 1)) {
                                     sortedCircle.push_back(*p);
                                     circle.erase(p);
                                     search = false;
                                 }
                                 break;
                             case 1:
-                                if (((p->x - sortedCircle.back().x) == -1
-                                        || p->x == sortedCircle.back().x)
-                                    && (p->y == sortedCircle.back().y
-                                        || (p->y - sortedCircle.back().y) == 1)) {
+                                if ((((*p)->x - sortedCircle.back()->x) == -1
+                                        || (*p)->x == sortedCircle.back()->x)
+                                    && ((*p)->y == sortedCircle.back()->y
+                                        || ((*p)->y - sortedCircle.back()->y) == 1)) {
                                     sortedCircle.push_back(*p);
                                     circle.erase(p);
                                     search = false;
                                 }
                                 break;
                             case 2:
-                                if (((p->x - sortedCircle.back().x) == -1
-                                        || p->x == sortedCircle.back().x)
-                                    && (p->y == sortedCircle.back().y
-                                        || (p->y - sortedCircle.back().y) == -1)) {
+                                if ((((*p)->x - sortedCircle.back()->x) == -1
+                                        || (*p)->x == sortedCircle.back()->x)
+                                    && ((*p)->y == sortedCircle.back()->y
+                                        || ((*p)->y - sortedCircle.back()->y) == -1)) {
                                     sortedCircle.push_back(*p);
                                     circle.erase(p);
                                     search = false;
                                 }
                                 break;
                             case 3:
-                                if (((p->x - sortedCircle.back().x) == 1
-                                        || p->x == sortedCircle.back().x)
-                                    && (p->y == sortedCircle.back().y
-                                        || (p->y - sortedCircle.back().y) == -1)) {
+                                if ((((*p)->x - sortedCircle.back()->x) == 1
+                                        || (*p)->x == sortedCircle.back()->x)
+                                    && ((*p)->y == sortedCircle.back()->y
+                                        || ((*p)->y - sortedCircle.back()->y) == -1)) {
                                     sortedCircle.push_back(*p);
                                     circle.erase(p);
                                     search = false;
@@ -241,9 +175,9 @@ namespace ARKIT
                  */
                 int keypoints = 0;
 
-                for (unsigned int y = this->radius; y < (f->height - this->radius); y++) {
-                    for (unsigned int x = this->radius; x < (f->width - this->radius); x++) {
-                        int Ip = f->at(x,y).intensity;
+                for (int y = this->radius; y < (f->Height() - this->radius); y++) {
+                    for (int x = this->radius; x < (f->Width() - this->radius); x++) {
+                        int Ip = f->RawAt(x,y);
                         Pixel center(x, y);
                         center.intensity = Ip;
 
@@ -252,24 +186,24 @@ namespace ARKIT
                         int lowerBound = Ip - this->intensity_threshold;
                         if (this->contiguous_pixels == 12) {
                             if (this->full_high_speed_test) {
-                                if ((f->at(x,y-3).intensity <= upperBound
-                                            && f->at(x,y-3).intensity >= lowerBound)
-                                        || (f->at(x, y+3).intensity <= upperBound
-                                            && f->at(x, y+3).intensity >= lowerBound)) {
+                                if ((f->RawAt(x,y-3) <= upperBound
+                                            && f->RawAt(x,y-3) >= lowerBound)
+                                        || (f->RawAt(x, y+3) <= upperBound
+                                            && f->RawAt(x, y+3) >= lowerBound)) {
                                     //Cannot be a corner
                                     continue;
-                                } else if ((f->at(x-3,y).intensity <= upperBound
-                                            && f->at(x-3,y).intensity >= lowerBound)
-                                        || (f->at(x+3, y).intensity <= upperBound
-                                            && f->at(x+3, y).intensity >= lowerBound)) {
+                                } else if ((f->RawAt(x-3,y) <= upperBound
+                                            && f->RawAt(x-3,y) >= lowerBound)
+                                        || (f->RawAt(x+3, y) <= upperBound
+                                            && f->RawAt(x+3, y) >= lowerBound)) {
                                     //Cannot be a corner
                                     continue;
                                 }
                             }
                             /* At least 3 of those 4 pixels must be brighter than p */
                             std::vector<Pixel> testPixels = {
-                                f->at(x, y-3), f->at(x, y+3),
-                                f->at(x-3, y), f->at(x+3, y)
+                                f->RawAt(x, y-3), f->RawAt(x, y+3),
+                                f->RawAt(x-3, y), f->RawAt(x+3, y)
                             };
                             bool allAbove = true, allBelow = true;
                             for (auto p = testPixels.begin(); p != testPixels.end(); p++) {
@@ -285,7 +219,7 @@ namespace ARKIT
 
                         /* Complete corner test */
                         auto circle = this->BresenhamCircle(center, this->radius, f);
-                        auto GetPixelWithOverflow = [] (std::vector<Pixel>& v, unsigned long int i) {
+                        auto GetPixelWithOverflow = [] (std::vector<Pixel*>& v, unsigned long int i) {
                             unsigned long int circleSize = v.size();
                             if (i >= circleSize)
                                 return v.at(i - circleSize);
@@ -294,7 +228,7 @@ namespace ARKIT
                         };
                         bool corner = false;
                         for (int i = 0; i < (int)circle.size(); i++) {
-                            std::vector<Pixel> contiguousPixels;
+                            std::vector<Pixel*> contiguousPixels;
                             contiguousPixels.reserve(this->contiguous_pixels);
                             for (int j = 0; j < this->contiguous_pixels; j++)
                                 contiguousPixels.push_back(GetPixelWithOverflow(circle, i+j));
@@ -302,7 +236,7 @@ namespace ARKIT
                             bool brighter = true, darker = true;
                             for (auto p = contiguousPixels.begin(); p !=
                                     contiguousPixels.end(); p++) {
-                                if (p->intensity <= upperBound) {
+                                if ((*p)->intensity <= upperBound) {
                                     brighter = false;
                                     break;
                                 }
@@ -315,7 +249,7 @@ namespace ARKIT
 
                             for (auto p = contiguousPixels.begin(); p !=
                                     contiguousPixels.end(); p++) {
-                                if (p->intensity >= lowerBound) {
+                                if ((*p)->intensity >= lowerBound) {
                                     darker = false;
                                     break;
                                 }
@@ -330,7 +264,7 @@ namespace ARKIT
                         if (corner) {
                             keypoints++;
                             for (auto p = circle.begin(); p != circle.end(); p++)
-                                f->writeAt(p->x, p->y, 0);
+                                f->WriteAt((*p)->x, (*p)->y, 0);
                         }
                     }
                 }
