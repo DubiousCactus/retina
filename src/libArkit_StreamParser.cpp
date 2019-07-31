@@ -101,6 +101,7 @@ namespace ARKIT
 
             Frame* NextFrame()
             {
+                Frame *f;
                 size_t bytes_read;
                 int ret;
 
@@ -109,6 +110,7 @@ namespace ARKIT
                 }
                 this->file.read((char*)(&this->inbuf[0]), INBUF_SIZE);
 
+                f = NULL;
                 /* Split the data into frames */
                 this->data = this->inbuf;
                 bytes_read = file.gcount();
@@ -124,9 +126,10 @@ namespace ARKIT
                     bytes_read -= ret;
 
                     if (pkt->size)
-                        return this->Decode();
+                        f = this->Decode();
                 }
-            }
 
+                return f;
+            }
     };
 }

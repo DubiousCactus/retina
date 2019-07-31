@@ -87,12 +87,13 @@ namespace ARKIT
                     EightWaySymmetricPlot(center, to, frame, circlePixels);
                 }
 
+                /* TODO: Optimize by skipping the duplicates removal and sorting. The whole parsing can be done in the "sorting phase" directly */
+
                 /* Remove duplicates  and reorder */
                 std::vector<Pixel*> circle;
                 circle.reserve(radius*8);
                 for (auto p = circlePixels.begin(); p != circlePixels.end(); p++) {
-                    if (std::find_if(circle.begin(), circle.end(), Pixel((*p)->x,
-                                    (*p)->y)) == circle.end())
+                    if (std::find_if(circle.begin(), circle.end(), *(*p)) == circle.end())
                         circle.push_back(*p);
                 }
 
@@ -103,6 +104,7 @@ namespace ARKIT
                 std::vector<Pixel*> sortedCircle;
                 sortedCircle.reserve(8*radius);
                 sortedCircle.push_back(circle.at(0));
+                assert(quadLength != 0);
                 for (long unsigned int i = 0; i < circleSize; i++) {
                     if (i != 0 && i % quadLength == 0) q++;
                     search = true;
@@ -201,15 +203,15 @@ namespace ARKIT
                                 }
                             }
                             /* At least 3 of those 4 pixels must be brighter than p */
-                            std::vector<Pixel> testPixels = {
+                            std::vector<uint8_t> testPixels = {
                                 f->RawAt(x, y-3), f->RawAt(x, y+3),
                                 f->RawAt(x-3, y), f->RawAt(x+3, y)
                             };
                             bool allAbove = true, allBelow = true;
                             for (auto p = testPixels.begin(); p != testPixels.end(); p++) {
-                                if (p->intensity <= upperBound)
+                                if (*p <= upperBound)
                                     allAbove = false;
-                                if (p->intensity >= lowerBound)
+                                if (*p >= lowerBound)
                                     allBelow = false;
                             }
 
@@ -219,18 +221,19 @@ namespace ARKIT
 
                         /* Complete corner test */
                         auto circle = this->BresenhamCircle(center, this->radius, f);
-                        auto GetPixelWithOverflow = [] (std::vector<Pixel*>& v, unsigned long int i) {
-                            unsigned long int circleSize = v.size();
+                        auto GetPixelWithOverflow = [] (std::vector<Pixel*>& v, unsigned int i) {
+                            assert(i/2 < v.size());
+                            unsigned int circleSize = v.size();
                             if (i >= circleSize)
                                 return v.at(i - circleSize);
                             else
                                 return v.at(i);
                         };
                         bool corner = false;
-                        for (int i = 0; i < (int)circle.size(); i++) {
+                        for (unsigned int i = 0; i < (int)circle.size(); i++) {
                             std::vector<Pixel*> contiguousPixels;
                             contiguousPixels.reserve(this->contiguous_pixels);
-                            for (int j = 0; j < this->contiguous_pixels; j++)
+                            for (unsigned int j = 0; j < this->contiguous_pixels; j++)
                                 contiguousPixels.push_back(GetPixelWithOverflow(circle, i+j));
 
                             bool brighter = true, darker = true;

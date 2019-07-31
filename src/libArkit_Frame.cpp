@@ -13,6 +13,7 @@
 
 namespace ARKIT
 {
+    /* TODO: Remove the Pixel structure, it's garbage */
     struct Pixel {
         int x;
         int y;
@@ -37,22 +38,22 @@ namespace ARKIT
             this->intensity = intensity;
         }
 
-        bool operator() (const Pixel& p) const
+        bool operator() (const Pixel* p) const
         {
-            return (p.x == this->x) && (p.y == this->y);
+            return (p->x == this->x) && (p->y == this->y);
         }
     };
 
     class Frame
     {
         private:
-            uint8_t *data;
+            uint8_t **data;
             std::map<int, Pixel*> pixels_cache;
             unsigned int width;
             unsigned int height;
 
         public:
-            Frame(uint8_t *data, int width, int height)
+            Frame(uint8_t **data, int width, int height)
             {
                 this->data = data;
                 this->width = width;
@@ -62,28 +63,19 @@ namespace ARKIT
             Pixel* PixelAt(unsigned int x, unsigned int y)
             {
                 assert (x < this->width && y < this->height);
-                Pixel *pixel;
-                if (this->pixels_cache.count(x*y)) {
-                    pixel = this->pixels_cache.at(x*y);
-                } else {
-                    Pixel p(x, y, this->data[(y*this->width)+x]);
-                    pixel = &p;
-                    this->pixels_cache.insert(std::pair<int, Pixel*>(x*y, pixel));
-                }
-
-                return pixel;
+                return new Pixel(x, y, this->data[y][x]);
             }
 
             uint8_t RawAt(unsigned int x, unsigned int y)
             {
                 assert (x < this->width && y < this->height);
-                return this->data[(y*this->width)+x];
+                return this->data[y][x];
             }
 
             void WriteAt(unsigned int x, unsigned int y, unsigned char val)
             {
                 assert (x < this->width && y < this->height);
-                this->data[(y*this->width)+x] = val;
+                this->data[y][x] = val;
             }
 
             int Width()

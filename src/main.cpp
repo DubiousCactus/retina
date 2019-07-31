@@ -16,14 +16,18 @@
 using namespace cimg_library;
 
 int main() {
-    CImg<unsigned char> image("shapes.jpg");
+    CImg<uint8_t> image("lena.jpg");
 
-    ARKIT::Frame frame1(image.width(), image.height());
-    for (int y = 0; y < image.height(); y++)
-        for (int x = 0; x < image.width(); x++)
-            frame1.pixels.push_back(ARKIT::Pixel(x, y, 0.33*image(x, y, 0, 0)
-                        + 0.33*image(x, y, 0, 1) + 0.33*image(x, y, 0, 2)));
+    uint8_t **data = new uint8_t *[image.height()];
+    for (int y = 0; y < image.height(); y++) {
+        data[y] = new uint8_t [image.width()];
+        for (int x = 0; x < image.width(); x++) {
+            data[y][x] = (uint8_t) (0.33 * image(x, y, 0, 0) + 0.33 * image(x, y, 0, 1) +
+                                            0.33 * image(x, y, 0, 2));
+        }
+    }
 
+    ARKIT::Frame frame1(data, image.width(), image.height());
     std::cout << "[*] Extracting features..." << std::endl;
     ARKIT::ORBExtractor extractor(frame1);
     extractor.Extract();
@@ -31,11 +35,11 @@ int main() {
     std::cout << "[*] Keypoints extracted: " << keypoints.size() << std::endl;
 
     ARKIT::Frame annotated = extractor.GetAnnotatedFrame();
-    CImg<unsigned char> annotatedImage(frame1.width, frame1.height, 1, 1, 0);
+    CImg<uint8_t> annotatedImage(annotated.Width(), annotated.Height(), 1, 1, 0);
 
-    for (unsigned int y = 0; y < annotated.height; y++)
-        for (unsigned int x = 0; x < annotated.width; x++)
-            annotatedImage(x, y, 0, 0) = annotated.at(x,y).intensity;
+    for (int y = 0; y < annotated.Height(); y++)
+        for (int x = 0; x < annotated.Width(); x++)
+            annotatedImage(x, y, 0, 0) = annotated.RawAt(x, y);
 
     CImgDisplay annotatedDisp(annotatedImage,"FAST keypoints");
 
