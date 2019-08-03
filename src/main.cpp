@@ -57,7 +57,6 @@ void video()
         std::cerr << "Empty frame!" << std::endl;
         exit(1);
     }
-    std::cout << f->Width() << "x" << f->Height() << std::endl;
     std::cout << "[*] Extracting features..." << std::endl;
     /*ARKIT::ORBExtractor extractor(*f);
     extractor.Extract();
