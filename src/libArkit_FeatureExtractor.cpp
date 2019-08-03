@@ -11,7 +11,7 @@
 #include <cassert>
 #include <chrono>
 
-#include "libArkit_Frame.cpp"
+#include "libArkit_StreamParser.cpp"
 
 namespace ARKIT
 {
@@ -177,8 +177,8 @@ namespace ARKIT
                  */
                 int keypoints = 0;
 
-                for (int y = this->radius; y < (f->Height() - this->radius); y++) {
-                    for (int x = this->radius; x < (f->Width() - this->radius); x++) {
+                for (int y = this->radius; y < (f->Height() - this->radius); y+=3) {
+                    for (int x = this->radius; x < (f->Width() - this->radius); x+=3) {
                         int Ip = f->RawAt(x,y);
                         Pixel center(x, y);
                         center.intensity = Ip;

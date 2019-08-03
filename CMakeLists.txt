@@ -4,12 +4,13 @@ cmake_minimum_required (VERSION 2.8)
 project(ARKit)
 
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
+  set(CMAKE_BUILD_TYPE Debug)
 endif()
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+set(CMAKE_CXX_FLAGS "-D__STDC_CONSTANT_MACROS")
 
 add_definitions('-std=c++11')
 
@@ -47,6 +48,15 @@ if(${YOU_NEED_PNG} EQUAL 1)
     target_link_libraries (${PROJECT_NAME} ${PNG_LIBRARY})
     target_compile_definitions(${PROJECT_NAME} PRIVATE cimg_use_png=1)
 endif()
+
+
+message(STATUS "Looking for ffmpeg...")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
+find_package(FFmpeg REQUIRED)
+if (FFMPEG_FOUND)
+    include_directories(${FFMPEG_INCLUDE_DIR})
+    target_link_libraries(${PROJECT_NAME} ${FFMPEG_LIBRARIES})
+endif(FFMPEG_FOUND)
 
 add_custom_target(${PROJECT_NAME}-symlink ALL ln --force -s ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/${PROJECT_NAME} DEPENDS ${PROJECT_NAME})
 set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES ${CMAKE_SOURCE_DIR}/${PROJECT_NAME})

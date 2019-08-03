@@ -15,7 +15,8 @@
 
 using namespace cimg_library;
 
-int main() {
+void lena()
+{
     CImg<uint8_t> image("lena.jpg");
 
     uint8_t **data = new uint8_t *[image.height()];
@@ -46,6 +47,39 @@ int main() {
     while (!annotatedDisp.is_closed()) {
         annotatedDisp.wait();
     }
+}
+
+void video()
+{
+    ARKIT::StreamParser streamParser("../sample.mpg");
+    ARKIT::Frame *f = streamParser.NextFrame();
+    if (!f) {
+        std::cerr << "Empty frame!" << std::endl;
+        exit(1);
+    }
+    std::cout << f->Width() << "x" << f->Height() << std::endl;
+    std::cout << "[*] Extracting features..." << std::endl;
+    /*ARKIT::ORBExtractor extractor(*f);
+    extractor.Extract();
+    std::vector<ARKIT::Keypoint> keypoints = extractor.GetKeypoints();
+    std::cout << "[*] Keypoints extracted: " << keypoints.size() << std::endl;
+
+    ARKIT::Frame annotated = extractor.GetAnnotatedFrame();*/
+    CImg<uint8_t> annotatedImage(f->Width(), f->Height(), 1, 1, 0);
+
+    for (int y = 0; y < f->Height(); y++)
+        for (int x = 0; x < f->Width(); x++)
+            annotatedImage(x, y, 0, 0) = f->RawAt(x, y);
+
+    CImgDisplay annotatedDisp(annotatedImage,"FAST keypoints");
+
+    while (!annotatedDisp.is_closed()) {
+        annotatedDisp.wait();
+    }
+}
+
+int main() {
+    video();
 
     return 0;
 }

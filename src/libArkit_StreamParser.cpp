@@ -9,8 +9,13 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <cstring>
 
-#include <libavcodec/avcodec.h>
+extern "C"
+{
+    #include <libavcodec/avcodec.h>
+}
+
 #include "libArkit_Frame.cpp"
 
 #define INBUF_SIZE 4096
@@ -21,12 +26,36 @@ namespace ARKIT
     {
         private:
             AVCodecParserContext *parser; 
-            AVCodecContext *context;
+            AVCodecContext *context { NULL };
             AVFrame *frame;
             AVPacket *pkt;
             std::ifstream file;
             uint8_t inbuf[INBUF_SIZE + AV_INPUT_BUFFER_PADDING_SIZE];
             uint8_t *data;
+
+            uint8_t* GetRGBPixel(int x, int y)
+            {
+                const unsigned char _y = this->frame->data[0][this->frame->linesize[0]*y + x];
+
+                x /= 2;
+                y /= 2;
+                const unsigned char u = this->frame->data[1][this->frame->linesize[1]*y + x];
+                const unsigned char v = this->frame->data[2][this->frame->linesize[2]*y + x];
+
+                uint8_t *pixel = new uint8_t[3];
+                pixel[0] = _y + 1.402*(v-128); //R
+                pixel[1] = _y - 0.344*(u-128) - 0.714*(v-128); //G
+                pixel[2] = _y + 1.772*(u-128); //B
+
+                return pixel;
+            }
+
+            uint8_t GetGrayscalePixel(int x, int y)
+            {
+                uint8_t *rgb = this->GetRGBPixel(x, y);
+
+                return 0.33 * rgb[0] + 0.33 * rgb[1] + 0.33 * rgb[2];
+            }
 
             Frame* Decode()
             {
@@ -47,10 +76,18 @@ namespace ARKIT
                         exit(1);
                     }
 
-                    Frame f(frame->data[0], frame->width, frame->height);
+                    uint8_t **data = new uint8_t *[frame->height];
+                    for (int i = 0; i < frame->height; i++) {
+                        data[i] = new uint8_t[frame->width];
+                        for (int j = 0; j < frame->width; j++) {
+                            data[i][j] = this->GetGrayscalePixel(j, i);
+                        }
+                    }
 
-                    return &f;
+                    return new Frame(data, frame->width, frame->height);
                 }
+
+                return NULL;
             }
 
         public:
@@ -116,16 +153,16 @@ namespace ARKIT
                 bytes_read = file.gcount();
                 while (bytes_read > 0) {
                     ret = av_parser_parse2(this->parser, this->context,
-                            &this->pkt->data, &this->pkt->size, data,
+                            &this->pkt->data, &this->pkt->size, this->data,
                             bytes_read, AV_NOPTS_VALUE, AV_NOPTS_VALUE, 0);
                     if (ret < 0) {
                         std::cerr << "Error while parsing" << std::endl;
                         exit(1);
                     }
-                    data += ret;
+                    this->data += ret;
                     bytes_read -= ret;
 
-                    if (pkt->size)
+                    if (this->pkt->size)
                         f = this->Decode();
                 }
 
