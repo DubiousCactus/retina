@@ -11,6 +11,7 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 set(CMAKE_CXX_FLAGS "-D__STDC_CONSTANT_MACROS")
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_definitions('-std=c++11')
 

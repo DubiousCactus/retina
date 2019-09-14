@@ -12,6 +12,7 @@
 #include <chrono>
 
 #include "libArkit_StreamParser.cpp"
+#include "libArkit_Matrix.cpp"
 
 namespace ARKIT
 {
@@ -163,7 +164,7 @@ namespace ARKIT
              */
             std::vector<Keypoint> FAST(Frame* f)
             {
-                //std::cout << "\t-> Extracting keypoints (FAST)..." << std::endl;
+                std::cout << "\t-> Extracting keypoints (FAST)..." << std::endl;
                 /*
                  * 1. Select a pixel P in the image, with intensity I
                  * 2. Select appropriate threshold value t
@@ -173,12 +174,12 @@ namespace ARKIT
                  * 5. P is a corner if there exists a set of n contiguous pixels
                  *  in the circle which are all brighter than I + t, or all
                  *  darker than I - t. (n, or threshold, can be chosen to be 12)
-                 * 6. Non-maximal suppression
+                 * 6. Non-maximal suppression (not in the case of ORB though)
                  */
                 int keypoints = 0;
 
-                for (int y = this->radius; y < (f->Height() - this->radius); y+=3) {
-                    for (int x = this->radius; x < (f->Width() - this->radius); x+=3) {
+                for (int y = this->radius; y < (f->Height() - this->radius); y++) {
+                    for (int x = this->radius; x < (f->Width() - this->radius); x++) {
                         int Ip = f->RawAt(x,y);
                         Pixel center(x, y);
                         center.intensity = Ip;
@@ -280,8 +281,39 @@ namespace ARKIT
             /* Order the FAST keypoints and return the N top points using the
              * Harris corner measure
              */
-            std::vector<Keypoint> HarrisFilter(std::vector<Keypoint> keypoints)
+            std::vector<Keypoint> HarrisFilter(/*std::vector<Keypoint> keypoints*/)
             {
+                // 1. Spatial derivative calculation
+                // Sobel operator kernel
+                short sX[3][3] = {
+                    {-1, 0, 1},
+                    {-2, 0, 2},
+                    {-1, 0, 1}
+                };
+                short sY[3][3] = {
+                    {1, 2, 1},
+                    {0, 0, 0},
+                    {-1, -2, -1}
+                };
+                Frame f_x = this->frame->Convolve(sX);
+                Frame f_y = this->frame->Convolve(sY);
+
+                /*Matrix3i sobelX, sobelY;
+                sobelX << -1, 0, 1,
+                       -2, 0, 2,
+                       -1, 0, 1;
+                sobelY << 1, 2, 1,
+                       0, 0, 0,
+                       -1, -2, -1;
+
+                I_x = convolve(img, sobelX)
+                I_y = convolve(img, sobelY)
+                I_xx = I_x * I_x
+                I_xy = I_y * I_x
+                I_yy = I_y * I_y
+                
+                */
+
                 return std::vector<Keypoint>();
             }
 
@@ -319,6 +351,11 @@ namespace ARKIT
                  * 3. Apply Harris corner measure to find the top N points
                  */
 
+                assert(this->frame != nullptr);
+                // STEP 1: Build the scale pyramid of the current frame
+                std::cout << "\t-> Building the pyramid" << std::endl;
+                ScalePyramid pyramid = this->BuildPyramid();
+
                 auto start = std::chrono::steady_clock::now();
                 this->FAST(this->frame);
                 auto end = std::chrono::steady_clock::now();
@@ -327,14 +364,19 @@ namespace ARKIT
                     (float)std::chrono::duration_cast<std::chrono::microseconds>(end
                             - start).count()/1000
                     << " milliseconds" << std::endl;
-                // STEP 1: Build the scale pyramid of the current frame
-                /*std::cout << "\t-> Building the pyramid" << std::endl;
-                ScalePyramid pyramid = this->BuildPyramid();
+                start = std::chrono::steady_clock::now();
+                this->HarrisFilter();
+                end = std::chrono::steady_clock::now();
+                std::cout << "[*] Harris filter executed in "
+                    <<
+                    (float)std::chrono::duration_cast<std::chrono::microseconds>(end
+                            - start).count()/1000
+                    << " milliseconds" << std::endl;
                 // STEP 2: for each level of the PoG
-                for (unsigned short i = 0; i < this->pog_levels; i++) {
+                /*for (unsigned short i = 0; i < this->pog_levels; i++) {
                     std::vector<Keypoint> keypoints = this->HarrisFilter(
-                            this->FAST(pyramid.scales.at(i)));*/
-                //}
+                            this->FAST(pyramid.scales.at(i)));
+                }*/
             }
 
             Frame GetAnnotatedFrame()

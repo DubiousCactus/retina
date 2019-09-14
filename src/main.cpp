@@ -52,23 +52,35 @@ void lena()
 void video()
 {
     ARKIT::StreamParser streamParser("../sample.mpg");
-    ARKIT::Frame *f = streamParser.NextFrame();
+    std::cout << "[*] Extracting features..." << std::endl;
+    ARKIT::Frame *f = NULL;
+    int i = 0;
+    while(i++ < 15)
+        f = streamParser.NextFrame();
+    ARKIT::ORBExtractor extractor(*f);
+    extractor.Extract();
+    /*do {
+        std::cout << "Frame no " << i++ << std::endl;
+        f = streamParser.NextFrame();
+        if (!f)
+            break;
+        ARKIT::ORBExtractor extractor(*f);
+        extractor.Extract();
+    } while (f);
+    //ARKIT::Frame *f = streamParser.NextFrame();
     if (!f) {
         std::cerr << "Empty frame!" << std::endl;
         exit(1);
-    }
-    std::cout << "[*] Extracting features..." << std::endl;
-    /*ARKIT::ORBExtractor extractor(*f);
-    extractor.Extract();
+    }*/
     std::vector<ARKIT::Keypoint> keypoints = extractor.GetKeypoints();
     std::cout << "[*] Keypoints extracted: " << keypoints.size() << std::endl;
 
-    ARKIT::Frame annotated = extractor.GetAnnotatedFrame();*/
-    CImg<uint8_t> annotatedImage(f->Width(), f->Height(), 1, 1, 0);
+    ARKIT::Frame annotated = extractor.GetAnnotatedFrame();
+    CImg<uint8_t> annotatedImage(annotated.Width(), annotated.Height(), 1, 1, 0);
 
-    for (int y = 0; y < f->Height(); y++)
-        for (int x = 0; x < f->Width(); x++)
-            annotatedImage(x, y, 0, 0) = f->RawAt(x, y);
+    for (int y = 0; y < annotated.Height(); y++)
+        for (int x = 0; x < annotated.Width(); x++)
+            annotatedImage(x, y, 0, 0) = annotated.RawAt(x, y);
 
     CImgDisplay annotatedDisp(annotatedImage,"FAST keypoints");
 

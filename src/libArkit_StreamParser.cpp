@@ -70,7 +70,7 @@ namespace ARKIT
                 while (ret >= 0) {
                     ret = avcodec_receive_frame(this->context, this->frame);
                     if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
-                        return NULL;
+                        return nullptr;
                     else if (ret < 0) {
                         std::cerr << "Error during decoding" << std::endl;
                         exit(1);
@@ -87,7 +87,7 @@ namespace ARKIT
                     return new Frame(data, frame->width, frame->height);
                 }
 
-                return NULL;
+                return nullptr;
             }
 
         public:
@@ -143,11 +143,11 @@ namespace ARKIT
                 int ret;
 
                 if (this->file.eof()) {
-                    return NULL;
+                    return nullptr;
                 }
                 this->file.read((char*)(&this->inbuf[0]), INBUF_SIZE);
 
-                f = NULL;
+                f = nullptr;
                 /* Split the data into frames */
                 this->data = this->inbuf;
                 bytes_read = file.gcount();
