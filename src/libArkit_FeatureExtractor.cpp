@@ -297,22 +297,9 @@ namespace ARKIT
                 };
                 Frame f_x = this->frame->Convolve(sX);
                 Frame f_y = this->frame->Convolve(sY);
-
-                /*Matrix3i sobelX, sobelY;
-                sobelX << -1, 0, 1,
-                       -2, 0, 2,
-                       -1, 0, 1;
-                sobelY << 1, 2, 1,
-                       0, 0, 0,
-                       -1, -2, -1;
-
-                I_x = convolve(img, sobelX)
-                I_y = convolve(img, sobelY)
-                I_xx = I_x * I_x
-                I_xy = I_y * I_x
-                I_yy = I_y * I_y
-                
-                */
+                Frame f_xx = f_x * f_x;
+                Frame f_xy = f_y * f_x;
+                Frame f_yy = f_y * f_y;
 
                 return std::vector<Keypoint>();
             }

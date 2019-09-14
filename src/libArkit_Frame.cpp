@@ -73,7 +73,7 @@ namespace ARKIT
 
             ~Frame()
             {
-                delete this->data;
+                //delete this->data;
             }
 
             Pixel* PixelAt(unsigned int x, unsigned int y)
@@ -83,7 +83,7 @@ namespace ARKIT
                 return new Pixel(x, y, this->data[y][x]);
             }
 
-            uint8_t RawAt(unsigned int x, unsigned int y)
+            uint8_t RawAt(unsigned int x, unsigned int y) const
             {
                 assert (x < this->width && y < this->height);
                 return this->data[y][x];
@@ -95,12 +95,12 @@ namespace ARKIT
                 this->data[y][x] = val;
             }
 
-            int Width()
+            int Width() const
             {
                 return this->width;
             }
 
-            int Height()
+            int Height() const
             {
                 return this->height;
             }
@@ -112,7 +112,6 @@ namespace ARKIT
 				T conv;
 				n2 = cols/2;
 				m2 = rows/2;
-                std::cout << n2 << "," << m2 << std::endl;
                 Frame f(this->width, this->height);
 				for (int i = n2; i < this->height - n2; ++i) {
 					for (int j = m2; j < this->width - m2; ++j) {
@@ -126,6 +125,21 @@ namespace ARKIT
 					}
 				}
 				return f;
+            }
+
+            Frame operator*(const Frame f) const
+            {
+                assert(f.Width() == this->width);
+                assert(f.Height() == this->height);
+                Frame mul(this->width, this->height);
+                for (int j = 0; j < this->height; ++j) {
+                    for (int i = 0; i < this->width; ++i) {
+                        for (int k = 0; k < mul.Height(); ++k) {
+                            mul.WriteAt(i, j, this->RawAt(k, j) * f.RawAt(i, k));
+                        }
+                    }
+                }
+                return mul;
             }
     };
 }
