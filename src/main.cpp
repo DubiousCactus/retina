@@ -11,7 +11,8 @@
 #include <vector>
 
 #include "../external/CImg.h"
-#include "libArkit_FeatureExtractor.cpp"
+#include "libArkit_FeatureExtractor.h"
+#include "libArkit_StreamParser.h"
 
 using namespace cimg_library;
 

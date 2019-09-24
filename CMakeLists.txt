@@ -17,7 +17,14 @@ add_definitions('-std=c++11')
 
 find_package(Threads)
 
-add_executable(${PROJECT_NAME} src/libArkit_FeatureExtractor.cpp src/main.cpp)
+add_executable(
+  ${PROJECT_NAME}
+  src/libArkit_Matrix.cpp
+  src/libArkit_Frame.cpp
+  src/libArkit_FeatureExtractor.cpp
+  src/libArkit_StreamParser.cpp
+  src/main.cpp
+)
 
 target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
 
