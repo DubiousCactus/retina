@@ -240,6 +240,10 @@ namespace ARKIT
      */
     std::vector<Keypoint> ORBExtractor::HarrisFilter(/*std::vector<Keypoint> keypoints*/)
     {
+        int offset = this->window_size / 2;
+        int Sxx, Syy, Sxy;
+        double det, trace, r;
+
         // 1. Spatial derivative calculation
         // Sobel operator kernel
         int sX[3][3] = {
@@ -257,14 +261,23 @@ namespace ARKIT
         Matrix f_x = Matrix::Convolve(this->frame, sobelX);
         Matrix f_y = Matrix::Convolve(this->frame, sobelY);
         Matrix f_xx = f_x * f_x.Transpose();
-        Matrix f_xy = f_y * f_x.Transpose();
+        Matrix f_xy = f_x * f_y.Transpose();
         Matrix f_yy = f_y * f_y.Transpose();
 
-        /*for (int i = this->frame->Width(); ++i) {
-            for (int j = this->frame->Height(); ++j) {
-                f_xx.Sum(i, j, this->windowSize);
+        /* TODO: Apply Gaussian filter to f_xx, f_xy, f_yy */
+
+        Matrix harrisResponse(this->frame->Height(), this->frame->Width());
+        for (int i = offset; i < this->frame->Height() - offset; ++i) {
+            for (int j = offset; j < this->frame->Width() - offset; ++j) {
+                Sxx = Matrix::Sum(f_xx, j-offset, i-offset, j+offset, i+offset);
+                Syy = Matrix::Sum(f_yy, j-offset, i-offset, j+offset, i+offset);
+                Sxy = Matrix::Sum(f_xy, j-offset, i-offset, j+offset, i+offset);
+                det = (Sxx * Syy) - (Sxy * Sxy);
+                trace = Sxx + Syy;
+                r = det - this->sensitivity_factor * (trace * trace);
+                *harrisResponse.At(i, j) = r;
             }
-        }*/
+        }
 
         return std::vector<Keypoint>();
     }
@@ -284,10 +297,12 @@ namespace ARKIT
     ORBExtractor::ORBExtractor(Frame& f)
     {
         this->full_high_speed_test = false;
+        this->sensitivity_factor = 0.004;
         this->intensity_threshold = 9;
         this->contiguous_pixels = 12;
         this->top_n_keypoints = 50;
         this->n_keypoints = 150;
+        this->window_size = 3;
         this->pog_levels = 1;
         this->radius = 3; // For a circle of 16 pixels
         this->frame = &f;

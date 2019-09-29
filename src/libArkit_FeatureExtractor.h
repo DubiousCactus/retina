@@ -53,8 +53,10 @@ namespace ARKIT
             unsigned short contiguous_pixels;
             unsigned short top_n_keypoints;
             unsigned short n_keypoints;
+            unsigned short window_size; // Harris corner detector
             unsigned short pog_levels;
             unsigned short radius;
+            float sensitivity_factor; // Harris
 
             /*
              * Bresenham's circle drawing algorithm

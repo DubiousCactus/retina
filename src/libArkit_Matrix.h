@@ -40,6 +40,7 @@ namespace ARKIT
 			int Rows();
 			int Cols();
 			static Matrix Convolve(Frame *f, Matrix &m);
+			static int Sum(Matrix &m, int xmin, int ymin, int xmax, int ymax);
 			Matrix Transpose();
 			Matrix operator*(Matrix m);
 
