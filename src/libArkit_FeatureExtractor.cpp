@@ -256,22 +256,22 @@ namespace ARKIT
             {0, 0, 0},
             {-1, -2, -1}
         };
-        Matrix sobelX(sX);
-        Matrix sobelY(sY);
-        Matrix f_x = Matrix::Convolve(this->frame, sobelX);
-        Matrix f_y = Matrix::Convolve(this->frame, sobelY);
-        Matrix f_xx = f_x * f_x.Transpose();
-        Matrix f_xy = f_x * f_y.Transpose();
-        Matrix f_yy = f_y * f_y.Transpose();
+        Matrix<int> sobelX(sX);
+        Matrix<int> sobelY(sY);
+        Matrix<int> f_x = Matrix<int>::Convolve(this->frame, sobelX);
+        Matrix<int> f_y = Matrix<int>::Convolve(this->frame, sobelY);
+        Matrix<int> f_xx = f_x * f_x.Transpose();
+        Matrix<int> f_xy = f_x * f_y.Transpose();
+        Matrix<int> f_yy = f_y * f_y.Transpose();
 
         /* TODO: Apply Gaussian filter to f_xx, f_xy, f_yy */
 
-        Matrix harrisResponse(this->frame->Height(), this->frame->Width());
+        Matrix<float> harrisResponse(this->frame->Height(), this->frame->Width());
         for (int i = offset; i < this->frame->Height() - offset; ++i) {
             for (int j = offset; j < this->frame->Width() - offset; ++j) {
-                Sxx = Matrix::Sum(f_xx, j-offset, i-offset, j+offset, i+offset);
-                Syy = Matrix::Sum(f_yy, j-offset, i-offset, j+offset, i+offset);
-                Sxy = Matrix::Sum(f_xy, j-offset, i-offset, j+offset, i+offset);
+                Sxx = Matrix<int>::Sum(f_xx, j-offset, i-offset, j+offset, i+offset);
+                Syy = Matrix<int>::Sum(f_yy, j-offset, i-offset, j+offset, i+offset);
+                Sxy = Matrix<int>::Sum(f_xy, j-offset, i-offset, j+offset, i+offset);
                 det = (Sxx * Syy) - (Sxy * Sxy);
                 trace = Sxx + Syy;
                 r = det - this->sensitivity_factor * (trace * trace);

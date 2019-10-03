@@ -19,7 +19,6 @@ find_package(Threads)
 
 add_executable(
   ${PROJECT_NAME}
-  src/libArkit_Matrix.cpp
   src/libArkit_Frame.cpp
   src/libArkit_FeatureExtractor.cpp
   src/libArkit_StreamParser.cpp
