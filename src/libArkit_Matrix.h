@@ -13,41 +13,41 @@
 
 namespace ARKIT
 {
-	template <class T>
-	class Matrix
-	{
-		private:
-			T **data;
-			int rows;
-			int cols;
+    template <class T>
+    class Matrix
+    {
+	    private:
+		    T **data;
+		    int rows;
+		    int cols;
 
-		public:
-			template <size_t n_rows, size_t n_cols>
-			Matrix(T (&data)[n_rows][n_cols])
-			{
-				T **data_p = new T*[n_rows];
-				for (size_t i = 0; i < n_rows; i++) {
-					data_p[i] = data[i];
-				}
-				this->data = data_p;
-				this->rows = n_rows;
-				this->cols = n_cols;
-			}
+	    public:
+		    template <size_t n_rows, size_t n_cols>
+		    Matrix(T (&data)[n_rows][n_cols])
+		    {
+			    T **data_p = new T*[n_rows];
+			    for (size_t i = 0; i < n_rows; i++) {
+				    data_p[i] = data[i];
+			    }
+			    this->data = data_p;
+			    this->rows = n_rows;
+			    this->cols = n_cols;
+		    }
 
-			Matrix(T **data, int rows, int cols);
-			Matrix(int rows, int cols);
-			~Matrix();
-			T *At(int m, int n);
-			int Rows();
-			int Cols();
-			static Matrix Convolve(Frame *f, Matrix<T> &m);
-			static T Sum(Matrix<T> &m, int xmin, int ymin, int xmax, int ymax);
-			Matrix Transpose();
-			Matrix operator*(Matrix<T> m);
+		    Matrix(T **data, int rows, int cols);
+		    Matrix(int rows, int cols);
+		    ~Matrix();
+		    T *At(int m, int n);
+		    int Rows();
+		    int Cols();
+		    static Matrix Convolve(Frame *f, Matrix<T> &m);
+		    static T Sum(Matrix<T> &m, int xmin, int ymin, int xmax, int ymax);
+		    Matrix Transpose();
+		    Matrix operator*(Matrix<T> m);
 
-	};
+    };
 
-	template <class T>
+    template <class T>
     Matrix<T>::Matrix(T **data, int rows, int cols)
     {
 		this->data = data;
@@ -55,7 +55,7 @@ namespace ARKIT
 		this->cols = cols;
     }
 
-	template <class T>
+    template <class T>
     Matrix<T>::Matrix(int rows, int cols)
     {
 		this->data = new T*[rows];
@@ -157,7 +157,6 @@ namespace ARKIT
     {
 		return this->cols;
     }
-
 }
 
 

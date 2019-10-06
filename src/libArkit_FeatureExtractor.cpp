@@ -45,7 +45,8 @@ namespace ARKIT
             EightWaySymmetricPlot(center, to, frame, circlePixels);
         }
 
-        /* TODO: Optimize by skipping the duplicates removal and sorting. The whole parsing can be done in the "sorting phase" directly */
+        /* TODO: Optimize by skipping the duplicates removal and sorting. The
+         * whole parsing can be done in the "sorting phase" directly */
 
         /* Remove duplicates  and reorder */
         std::vector<Pixel*> circle;
@@ -252,21 +253,22 @@ namespace ARKIT
             {-1, 0, 1}
         };
         int sY[3][3] = {
-            {1, 2, 1},
+            {-1, -2, -1},
             {0, 0, 0},
-            {-1, -2, -1}
+            {1, 2, 1}
         };
         Matrix<int> sobelX(sX);
         Matrix<int> sobelY(sY);
         Matrix<int> f_x = Matrix<int>::Convolve(this->frame, sobelX);
         Matrix<int> f_y = Matrix<int>::Convolve(this->frame, sobelY);
         Matrix<int> f_xx = f_x * f_x.Transpose();
-        Matrix<int> f_xy = f_x * f_y.Transpose();
+        Matrix<int> f_xy = f_y * f_x.Transpose();
         Matrix<int> f_yy = f_y * f_y.Transpose();
 
         /* TODO: Apply Gaussian filter to f_xx, f_xy, f_yy */
+        // AKCHUALLY, the Sobel operator computes the gradient with
+        // smoothing...
 
-        Matrix<float> harrisResponse(this->frame->Height(), this->frame->Width());
         for (int i = offset; i < this->frame->Height() - offset; ++i) {
             for (int j = offset; j < this->frame->Width() - offset; ++j) {
                 Sxx = Matrix<int>::Sum(f_xx, j-offset, i-offset, j+offset, i+offset);
@@ -275,7 +277,30 @@ namespace ARKIT
                 det = (Sxx * Syy) - (Sxy * Sxy);
                 trace = Sxx + Syy;
                 r = det - this->sensitivity_factor * (trace * trace);
-                *harrisResponse.At(i, j) = r;
+                if (r > 0 && (i > 5 && i < this->frame->Height()-5) && (j > 5 && j < this->frame->Width()-5)) {
+                    /*this->frame->WriteAt(j-5, i, 0);*/
+                    //this->frame->WriteAt(j-4, i, 0);
+                    //this->frame->WriteAt(j-3, i, 0);
+                    //this->frame->WriteAt(j-2, i, 0);
+                    //this->frame->WriteAt(j-1, i, 0);
+                    this->frame->WriteAt(j, i, 0);
+                    /*this->frame->WriteAt(j+5, i, 0);
+                    this->frame->WriteAt(j+4, i, 0);
+                    this->frame->WriteAt(j+3, i, 0);
+                    this->frame->WriteAt(j+2, i, 0);
+                    this->frame->WriteAt(j+1, i, 0);
+                    this->frame->WriteAt(j, i-5, 0);
+                    this->frame->WriteAt(j, i-4, 0);
+                    this->frame->WriteAt(j, i-3, 0);
+                    this->frame->WriteAt(j, i-2, 0);
+                    this->frame->WriteAt(j, i-1, 0);
+                    this->frame->WriteAt(j, i, 0);
+                    this->frame->WriteAt(j, i+5, 0);
+                    this->frame->WriteAt(j, i+4, 0);
+                    this->frame->WriteAt(j, i+3, 0);
+                    this->frame->WriteAt(j, i+2, 0);
+                    this->frame->WriteAt(j, i+1, 0);*/
+                }
             }
         }
 
@@ -297,7 +322,7 @@ namespace ARKIT
     ORBExtractor::ORBExtractor(Frame& f)
     {
         this->full_high_speed_test = false;
-        this->sensitivity_factor = 0.004;
+        this->sensitivity_factor = 0.04;
         this->intensity_threshold = 9;
         this->contiguous_pixels = 12;
         this->top_n_keypoints = 50;
