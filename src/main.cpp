@@ -91,7 +91,7 @@ void video()
 }
 
 int main() {
-    lena();
+    video();
 
     return 0;
 }

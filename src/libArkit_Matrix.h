@@ -40,7 +40,10 @@ namespace ARKIT
 		    T *At(int m, int n);
 		    int Rows();
 		    int Cols();
+			/* Returns the central part of the convolution
+                that is the same size as A.*/
 		    static Matrix Convolve(Frame *f, Matrix<T> &m);
+		    static Matrix Convolve(Matrix<T> &m, Matrix<T> &kernel);
 		    static T Sum(Matrix<T> &m, int xmin, int ymin, int xmax, int ymax);
 		    Matrix Transpose();
 		    Matrix operator*(Matrix<T> m);
@@ -96,6 +99,28 @@ namespace ARKIT
 				for (int l = -n2; l <= n2; ++l) {
 					for (int k = -m2; k <= m2; k++) {
 						conv += *m.At(k+m2, l+n2) * (int) f->RawAt(j - l, i - k);
+					}
+				}
+				*c.At(j - m2, i - n2) = conv;
+			}
+		}
+		return c;
+    }
+
+	template <class T>
+    Matrix<T> Matrix<T>::Convolve(Matrix<T> &m, Matrix<T> &kernel)
+    {
+		int n2, m2;
+		int conv;
+		n2 = m.cols/2;
+		m2 = m.rows/2;
+		Matrix c(m.Rows(), m.Cols());
+		for (int i = n2; i < m.Rows() - n2; ++i) {
+			for (int j = m2; j < m.Cols() - m2; ++j) {
+				conv = 0;
+				for (int l = -n2; l <= n2; ++l) {
+					for (int k = -m2; k <= m2; k++) {
+						conv += *kernel.At(k+m2, l+n2) * *m.At(j - l, i - k);
 					}
 				}
 				*c.At(j - m2, i - n2) = conv;

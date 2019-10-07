@@ -102,5 +102,8 @@ add_executable(ARKit_test test/Matrix_test.cpp)
 target_link_libraries(ARKit_test gtest_main)
 add_test(NAME ARKit_test COMMAND ARKit_test)
 
-add_custom_target(${PROJECT_NAME}-symlink ALL ln --force -s ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/${PROJECT_NAME} DEPENDS ${PROJECT_NAME})
-set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES ${CMAKE_SOURCE_DIR}/${PROJECT_NAME})
+add_custom_target(${PROJECT_NAME}-symlink ALL ln --force -s
+  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}
+  ${CMAKE_SOURCE_DIR}/${PROJECT_NAME} DEPENDS ${PROJECT_NAME})
+set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES
+  ${CMAKE_SOURCE_DIR}/${PROJECT_NAME})

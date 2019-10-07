@@ -1,0 +1,13 @@
+/*
+ * Matrix_test.cpp
+ * Copyright (C) 2019 transpalette <transpalette@arch-cactus>
+ *
+ * Distributed under terms of the MIT license.
+ */
+
+#include <gtest/gtest.h>
+
+
+TEST(Test, Testing) {
+    EXPECT_EQ(1, 1);
+}
