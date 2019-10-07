@@ -186,9 +186,13 @@ namespace ARKIT
     T Matrix<T>::Sum(Matrix<T> &m, int xmin, int ymin, int xmax, int ymax)
     {
 		int sum = 0;
+		auto ZeroPaddedAccess = [](auto &mat, int i, int j) {
+			return (i < 0 || i >= mat.Rows() || j < 0 || j >= mat.Cols()) ? 0
+				: *mat.At(i, j);
+		};
 		for (int i = xmin; i <= xmax; ++i) {
 			for (int j = ymin; j <= ymax; ++j) {
-				sum += *m.At(i, j);
+				sum += ZeroPaddedAccess(m, i, j);
 			}
 		}
 		return sum;

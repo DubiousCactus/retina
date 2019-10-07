@@ -270,8 +270,8 @@ namespace ARKIT
         // AKCHUALLY, the Sobel operator computes the gradient with
         // smoothing...
 
-        for (int i = offset; i < this->frame->Height() - offset; ++i) {
-            for (int j = offset; j < this->frame->Width() - offset; ++j) {
+        for (int i = offset; i < img.Rows() - offset; ++i) {
+            for (int j = offset; j < img.Cols() - offset; ++j) {
                 Sxx = Matrix<int>::Sum(f_xx, j-offset, i-offset, j+offset, i+offset);
                 Syy = Matrix<int>::Sum(f_yy, j-offset, i-offset, j+offset, i+offset);
                 Sxy = Matrix<int>::Sum(f_xy, j-offset, i-offset, j+offset, i+offset);
@@ -279,13 +279,13 @@ namespace ARKIT
                 trace = Sxx + Syy;
                 r = det - this->sensitivity_factor * (trace * trace);
                 if (r > 0 && (i > 5 && i < this->frame->Height()-5) && (j > 5 && j < this->frame->Width()-5)) {
-                    /*this->frame->WriteAt(j-5, i, 0);*/
-                    //this->frame->WriteAt(j-4, i, 0);
-                    //this->frame->WriteAt(j-3, i, 0);
-                    //this->frame->WriteAt(j-2, i, 0);
-                    //this->frame->WriteAt(j-1, i, 0);
+                    this->frame->WriteAt(j-5, i, 0);
+                    this->frame->WriteAt(j-4, i, 0);
+                    this->frame->WriteAt(j-3, i, 0);
+                    this->frame->WriteAt(j-2, i, 0);
+                    this->frame->WriteAt(j-1, i, 0);
                     this->frame->WriteAt(j, i, 0);
-                    /*this->frame->WriteAt(j+5, i, 0);
+                    this->frame->WriteAt(j+5, i, 0);
                     this->frame->WriteAt(j+4, i, 0);
                     this->frame->WriteAt(j+3, i, 0);
                     this->frame->WriteAt(j+2, i, 0);
@@ -300,7 +300,7 @@ namespace ARKIT
                     this->frame->WriteAt(j, i+4, 0);
                     this->frame->WriteAt(j, i+3, 0);
                     this->frame->WriteAt(j, i+2, 0);
-                    this->frame->WriteAt(j, i+1, 0);*/
+                    this->frame->WriteAt(j, i+1, 0);
                 }
             }
         }
@@ -345,7 +345,7 @@ namespace ARKIT
 
         assert(this->frame != nullptr);
         // STEP 1: Build the scale pyramid of the current frame
-        std::cout << "\t-> Building the pyramid" << std::endl;
+        /*std::cout << "\t-> Building the pyramid" << std::endl;
         ScalePyramid pyramid = this->BuildPyramid();
 
         auto start = std::chrono::steady_clock::now();
@@ -355,10 +355,10 @@ namespace ARKIT
             <<
             (float)std::chrono::duration_cast<std::chrono::microseconds>(end
                     - start).count()/1000
-            << " milliseconds" << std::endl;
-        start = std::chrono::steady_clock::now();
+            << " milliseconds" << std::endl;*/
+        auto start = std::chrono::steady_clock::now();
         this->HarrisFilter();
-        end = std::chrono::steady_clock::now();
+        auto end = std::chrono::steady_clock::now();
         std::cout << "[*] Harris filter executed in "
             <<
             (float)std::chrono::duration_cast<std::chrono::microseconds>(end
