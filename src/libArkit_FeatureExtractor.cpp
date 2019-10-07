@@ -259,8 +259,9 @@ namespace ARKIT
         };
         Matrix<int> sobelX(sX);
         Matrix<int> sobelY(sY);
-        Matrix<int> f_x = Matrix<int>::Convolve(this->frame, sobelX);
-        Matrix<int> f_y = Matrix<int>::Convolve(this->frame, sobelY);
+        Matrix<int> img = this->frame->GetMatrix();
+        Matrix<int> f_x = Matrix<int>::Convolve(img, sobelX);
+        Matrix<int> f_y = Matrix<int>::Convolve(img, sobelY);
         Matrix<int> f_xx = f_x * f_x.Transpose();
         Matrix<int> f_xy = f_y * f_x.Transpose();
         Matrix<int> f_yy = f_y * f_y.Transpose();

@@ -9,7 +9,6 @@
 #define LIBARKIT_MATRIX_H
 
 #include <cstddef>
-#include "libArkit_Frame.h"
 
 namespace ARKIT
 {
@@ -42,12 +41,12 @@ namespace ARKIT
 		    int Cols();
 			/* Returns the central part of the convolution
                 that is the same size as A.*/
-		    static Matrix Convolve(Frame *f, Matrix<T> &m);
+			//static Matrix Convolve(Frame *f, Matrix<T> &m);
 		    static Matrix Convolve(Matrix<T> &m, Matrix<T> &kernel);
 		    static T Sum(Matrix<T> &m, int xmin, int ymin, int xmax, int ymax);
 		    Matrix Transpose();
 		    Matrix operator*(Matrix<T> m);
-
+			void Print();
     };
 
     template <class T>
@@ -84,10 +83,46 @@ namespace ARKIT
 		assert(n >= 0);
 		return &this->data[m][n];
     }
-
+/*
 	template <class T>
     Matrix<T> Matrix<T>::Convolve(Frame *f, Matrix<T> &m)
     {
+		assert(m.Rows() == m.Cols()); // Only work with square ms
+		assert((m.Rows() % 2) != 0); // Only work with odd ms
+		int n2, m2;
+		int conv;
+		n2 = m.cols/2;
+		m2 = m.rows/2;
+		Matrix c(f->Height(), f->Width());
+		auto ZeroPaddedAccess = [](auto *frame, int i, int j) {
+			return (i < 0 || i >= frame->Width() || j < 0 || j >= frame->Height()) ? 0
+				: (int)frame->RawAt(i, j);
+		};
+		for (int i = 0; i < f->Height(); ++i) {
+			for (int j = 0; j < f->Width(); ++j) {
+				conv = 0;
+				for (int k = -n2; k <= n2; ++k) {
+					for (int l = -m2; l <= m2; ++l) {
+						conv += *m.At(k+n2, l+m2) * ZeroPaddedAccess(f, j-l, i-k);
+					}
+				}
+				*c.At(i, j) = conv;
+			}
+		}
+		[>for (int i = n2; i < m.Rows() - n2; ++i) {
+			for (int j = m2; j < m.Cols() - m2; ++j) {
+				conv = 0;
+				for (int l = -n2; l <= n2; ++l) {
+					for (int k = -m2; k <= m2; k++) {
+						conv += *kernel.At(k+m2, l+n2) * *m.At( i - k, j - l);
+					}
+				}
+				std::cout << conv << std::endl;
+				*c.At(j - m2, i - n2) = conv;
+			}
+		}<]
+		return c;
+[>
 		int n2, m2;
 		int conv;
 		n2 = m.cols/2;
@@ -104,28 +139,46 @@ namespace ARKIT
 				*c.At(j - m2, i - n2) = conv;
 			}
 		}
-		return c;
-    }
+		return c;<]
+    }*/
 
 	template <class T>
     Matrix<T> Matrix<T>::Convolve(Matrix<T> &m, Matrix<T> &kernel)
     {
+		assert(kernel.Rows() == kernel.Cols()); // Only work with square kernels
+		assert((kernel.Rows() % 2) != 0); // Only work with odd kernels
 		int n2, m2;
 		int conv;
-		n2 = m.cols/2;
-		m2 = m.rows/2;
-		Matrix c(m.Rows(), m.Cols());
-		for (int i = n2; i < m.Rows() - n2; ++i) {
+		n2 = kernel.cols/2;
+		m2 = kernel.rows/2;
+		Matrix<T> c(m.Rows(), m.Cols());
+		auto ZeroPaddedAccess = [](auto &mat, int i, int j) {
+			return (i < 0 || i >= mat.Rows() || j < 0 || j >= mat.Cols()) ? 0
+				: *mat.At(i, j);
+		};
+		for (int i = 0; i < m.Rows(); ++i) {
+			for (int j = 0; j < m.Cols(); ++j) {
+				conv = 0;
+				for (int k = -n2; k <= n2; ++k) {
+					for (int l = -m2; l <= m2; ++l) {
+						conv += *kernel.At(k+n2, l+m2) * ZeroPaddedAccess(m, i-k, j-l);
+					}
+				}
+				*c.At(i, j) = conv;
+			}
+		}
+		/*for (int i = n2; i < m.Rows() - n2; ++i) {
 			for (int j = m2; j < m.Cols() - m2; ++j) {
 				conv = 0;
 				for (int l = -n2; l <= n2; ++l) {
 					for (int k = -m2; k <= m2; k++) {
-						conv += *kernel.At(k+m2, l+n2) * *m.At(j - l, i - k);
+						conv += *kernel.At(k+m2, l+n2) * *m.At( i - k, j - l);
 					}
 				}
+				std::cout << conv << std::endl;
 				*c.At(j - m2, i - n2) = conv;
 			}
-		}
+		}*/
 		return c;
     }
 
@@ -133,8 +186,8 @@ namespace ARKIT
     T Matrix<T>::Sum(Matrix<T> &m, int xmin, int ymin, int xmax, int ymax)
     {
 		int sum = 0;
-		for (int i = ymin; i < ymax; ++i) {
-			for (int j = xmin; j < xmax; ++j) {
+		for (int i = xmin; i <= xmax; ++i) {
+			for (int j = ymin; j <= ymax; ++j) {
 				sum += *m.At(i, j);
 			}
 		}
@@ -146,12 +199,12 @@ namespace ARKIT
     {
 		assert(this->cols == m.Rows());
 		int sum;
-		Matrix mul(this->rows, m.Cols());
+		Matrix<T> mul(this->rows, m.Cols());
 		for (int j = 0; j < this->rows; ++j) {
 			for (int i = 0; i < m.Cols(); ++i) {
 				sum = 0;
-				for (int k = 0; k < this->cols; ++k) {
-					sum += *this->At(j, k) + *m.At(k, j);
+				for (int k = 0; k < m.Rows(); ++k) {
+					sum += *this->At(j, k) * *m.At(k, i);
 				}
 				*mul.At(j, i) = sum;
 			}
@@ -162,10 +215,10 @@ namespace ARKIT
 	template <class T>
     Matrix<T> Matrix<T>::Transpose()
     {
-		Matrix t(this->cols, this->rows);
-		for (int i = this->rows - 1; i >= 0; --i) {
+		Matrix<T> t(this->cols, this->rows);
+		for (int i = 0; i < this->rows; ++i) {
 			for (int j = 0; j < this->cols; ++j) {
-				*t.At(j , this->rows - 1 - i) = *this->At(i, j);
+				*t.At(j, i) = *this->At(i, j);
 			}
 		}
 		return t;
@@ -182,6 +235,17 @@ namespace ARKIT
     {
 		return this->cols;
     }
+
+    template <class T>
+	void Matrix<T>::Print()
+	{
+		for (int i = 0; i < this->rows; ++i) {
+			for (int j = 0; j < this->cols; ++j) {
+				std::cout << *this->At(i, j) << " ";
+			}
+			std::cout << std::endl;
+		}
+	}
 }
 
 

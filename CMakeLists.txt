@@ -13,7 +13,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 set(CMAKE_CXX_FLAGS "-D__STDC_CONSTANT_MACROS")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_definitions('-std=c++11')
+add_definitions('-std=c++14')
 
 # Download and unpack googletest at configure time
 configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)

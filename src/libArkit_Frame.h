@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <iostream>
 #include <libavcodec/avcodec.h>
+#include "libArkit_Matrix.h"
 
 namespace ARKIT
 {
@@ -64,10 +65,7 @@ namespace ARKIT
             void WriteAt(unsigned int x, unsigned int y, unsigned char val);
             int Width() const;
             int Height() const;
-
-            template <typename T, size_t rows, size_t cols>
-				Frame Convolve(T (&filter)[rows][cols]);
-
+            Matrix<int> GetMatrix();
             Frame operator*(const Frame f) const;
     };
 }

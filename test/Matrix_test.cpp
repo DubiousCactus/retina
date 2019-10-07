@@ -8,7 +8,6 @@
 #include <gtest/gtest.h>
 #include "../src/libArkit_Matrix.h"
 
-
 TEST(Matrix, Creation) {
     ARKIT::Matrix<int> m(4, 6);
     ASSERT_EQ(m.Rows(), 4);
@@ -51,20 +50,43 @@ TEST(Matrix, Transpose) {
         { 4, 5, 6}
     };
     int data_t[3][2] = {
-        {4, 1},
-        {5, 2},
-        {6, 3}
+        {1, 4},
+        {2, 5},
+        {3, 6}
     };
     ARKIT::Matrix<int> m(data);
     auto transpose = m.Transpose();
     EXPECT_EQ(transpose.Rows(), m.Cols());
     EXPECT_EQ(transpose.Cols(), m.Rows());
-    EXPECT_EQ(*transpose.At(0, 0), 4);
-    EXPECT_EQ(*transpose.At(0, 1), 1);
-    EXPECT_EQ(*transpose.At(1, 0), 5);
-    EXPECT_EQ(*transpose.At(1, 1), 2);
-    EXPECT_EQ(*transpose.At(2, 0), 6);
-    EXPECT_EQ(*transpose.At(2, 1), 3);
+    for (int i = 0; i < transpose.Rows(); i++) {
+        for (int j = 0; j < transpose.Cols(); j++) {
+            ASSERT_EQ(*transpose.At(i, j), data_t[i][j]);
+        }
+    }
+
+    long square[5][5] = {
+        { 1, 2, 3, 4, 5 },
+        { 0, 0, 0, 0, 0 },
+        { 1, 2, 3, 4, 5 },
+        { 7, 8, 9, 10, 11 },
+        { -12, -83, -99, -65, -44 }
+    };
+    long square_t[5][5] = {
+        { 1, 0, 1, 7, -12 },
+        { 2, 0, 2, 8, -83 },
+        { 3, 0, 3, 9, -99 },
+        { 4, 0, 4, 10, -65 },
+        { 5, 0, 5, 11, -44 }
+    };
+    ARKIT::Matrix<long> m2(square);
+    auto t = m2.Transpose();
+    EXPECT_EQ(t.Rows(), m2.Cols());
+    EXPECT_EQ(t.Cols(), m2.Rows());
+    for (int i = 0; i < t.Rows(); i++) {
+        for (int j = 0; j < t.Cols(); j++) {
+            ASSERT_EQ(*t.At(i, j), square_t[i][j]);
+        }
+    }
 }
 
 TEST(Matrix, Sum) {
@@ -81,7 +103,7 @@ TEST(Matrix, Sum) {
     EXPECT_EQ(sum, 21);
     sum = ARKIT::Matrix<int>::Sum(m, 1, 1, 2, 1);
     EXPECT_EQ(sum, 13);
-    // TODO: Expect exception: ARKIT::Matrix<int>::Sum(m, 3, 1, 2, 1);
+     //TODO: Expect exception: ARKIT::Matrix<int>::Sum(m, 3, 1, 2, 1);
 }
 
 TEST(Matrix, Mul) {
@@ -104,7 +126,6 @@ TEST(Matrix, Mul) {
     ARKIT::Matrix<int> m(data);
     ARKIT::Matrix<int> o(op);
     ARKIT::Matrix<int> r(res);
-    std::cout << "test" << std::endl;
     auto mul = m * o.Transpose();
     EXPECT_EQ(mul.Rows(), r.Rows());
     EXPECT_EQ(mul.Cols(), r.Cols());
@@ -113,7 +134,7 @@ TEST(Matrix, Mul) {
             ASSERT_EQ(*mul.At(i, j), *r.At(i, j));
         }
     }
-    // TODO: Expect exception for bad dimensions
+     //TODO: Expect exception for bad dimensions
 }
 
 
@@ -130,10 +151,10 @@ TEST(Matrix, Convolution) {
         {1, 3, 1}
     };
     int res[4][3] = {
-        21, 42, 35,
-        50, 88, 70,
-        86, 139, 106,
-        82, 108, 70
+        { 21, 42, 35 },
+        { 50, 88, 70 },
+        { 86, 139, 106 },
+        { 82, 108, 70 }
     };
     ARKIT::Matrix<int> m(data);
     ARKIT::Matrix<int> k(kernel);
@@ -146,6 +167,5 @@ TEST(Matrix, Convolution) {
             ASSERT_EQ(*conv2d.At(i, j), *r.At(i, j));
         }
     }
-    // TODO: Expect exception for bad dimensions
-
+     //TODO: Expect exception for bad dimensions
 }

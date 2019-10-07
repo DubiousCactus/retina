@@ -50,6 +50,17 @@ namespace ARKIT
         this->data[y][x] = val;
     }
 
+    Matrix<int> Frame::GetMatrix()
+    {
+        Matrix<int> intMat(this->height, this->width);
+        for (int i = 0; i < this->height; ++i) {
+            for (int j = 0; j < this->width; ++j) {
+                *intMat.At(i, j) = (int)this->RawAt(j, i);
+            }
+        }
+        return intMat;
+    }
+
     int Frame::Width() const
     {
         return this->width;
@@ -59,28 +70,6 @@ namespace ARKIT
     {
         return this->height;
     }
-
-    template <typename T, size_t rows, size_t cols>
-        Frame Frame::Convolve(T (&filter)[rows][cols])
-        {
-            int n2, m2;
-            T conv;
-            n2 = cols/2;
-            m2 = rows/2;
-            Frame f(this->width, this->height);
-            for (int i = n2; i < this->height - n2; ++i) {
-                for (int j = m2; j < this->width - m2; ++j) {
-                    conv = 0;
-                    for (int l = -n2; l <= n2; ++l) {
-                        for (int k = -m2; k <= m2; k++) {
-                            conv += filter[k][l] * f.RawAt(j - l, i - k);
-                        }
-                    }
-                    f.WriteAt(j - m2, i - n2, (uint8_t)conv);
-                }
-            }
-            return f;
-        }
 
     Frame Frame::operator*(const Frame f) const
     {
