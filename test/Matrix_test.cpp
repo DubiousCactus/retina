@@ -89,7 +89,7 @@ TEST(Matrix, Transpose) {
     }
 }
 
-TEST(Matrix, Sum) {
+/*TEST(Matrix, Sum) {
     int data[4][3] = {
         { 1, 2, 3 },
         { 4, 5, 6},
@@ -104,7 +104,7 @@ TEST(Matrix, Sum) {
     sum = ARKIT::Matrix<int>::Sum(m, 1, 1, 2, 1);
     EXPECT_EQ(sum, 13);
      //TODO: Expect exception: ARKIT::Matrix<int>::Sum(m, 3, 1, 2, 1);
-}
+}*/
 
 TEST(Matrix, Mul) {
     int data[4][3] = {

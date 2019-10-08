@@ -43,10 +43,12 @@ namespace ARKIT
                 that is the same size as A.*/
 			//static Matrix Convolve(Frame *f, Matrix<T> &m);
 		    static Matrix Convolve(Matrix<T> &m, Matrix<T> &kernel);
-		    static T Sum(Matrix<T> &m, int xmin, int ymin, int xmax, int ymax);
+		    static T Sum(Matrix<T> &m, int row, int col, int windowSize);
+			// Hadamard product of two matrices of the same size
+			static Matrix<T> ElementWise(Matrix<T> &m1, Matrix<T> &m2);
 		    Matrix Transpose();
 		    Matrix operator*(Matrix<T> m);
-			void Print();
+		    void Print();
     };
 
     template <class T>
@@ -181,7 +183,7 @@ namespace ARKIT
 		}*/
 		return c;
     }
-
+/*
 	template <class T>
     T Matrix<T>::Sum(Matrix<T> &m, int xmin, int ymin, int xmax, int ymax)
     {
@@ -192,11 +194,38 @@ namespace ARKIT
 		};
 		for (int i = xmin; i <= xmax; ++i) {
 			for (int j = ymin; j <= ymax; ++j) {
-				sum += ZeroPaddedAccess(m, i, j);
+				sum += ZeroPaddedAccess(m, j, i);
+			}
+		}
+		return sum;
+    }*/
+
+	template <class T>
+    T Matrix<T>::Sum(Matrix<T> &m, int row, int col, int windowSize)
+    {
+		int sum = 0;
+		int offset = windowSize/2;
+		for (int i = -offset; i <= offset; ++i) {
+			for (int j = -offset; j <= offset; ++j) {
+				sum += *m.At(row+i, col+j);
 			}
 		}
 		return sum;
     }
+
+    template <class T>
+    Matrix<T> Matrix<T>::ElementWise(Matrix<T> &m1, Matrix<T> &m2)
+	{
+		assert(m1.Rows() == m2.Rows());
+		assert(m1.Cols() == m2.Cols());
+		Matrix<T> mul(m1.Rows(), m2.Rows());
+		for (int i = 0; i < m1.Rows(); ++i) {
+			for (int j = 0; j < m1.Cols(); ++j) {
+				*mul.At(i, j) = *m1.At(i,j) * *m2.At(i, j);
+			}
+		}
+		return mul;
+	}
 
 	template <class T>
     Matrix<T> Matrix<T>::operator*(Matrix<T> m)

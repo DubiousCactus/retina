@@ -6,6 +6,7 @@
  */
 
 #include "libArkit_FeatureExtractor.h"
+#include "../external/CImg.h"
 
 namespace ARKIT
 {
@@ -262,9 +263,43 @@ namespace ARKIT
         Matrix<int> img = this->frame->GetMatrix();
         Matrix<int> f_x = Matrix<int>::Convolve(img, sobelX);
         Matrix<int> f_y = Matrix<int>::Convolve(img, sobelY);
-        Matrix<int> f_xx = f_x * f_x.Transpose();
-        Matrix<int> f_xy = f_y * f_x.Transpose();
-        Matrix<int> f_yy = f_y * f_y.Transpose();
+
+        cimg_library::CImg<uint8_t> x_deriv(f_x.Cols(), f_x.Rows(), 1, 1, 0);
+
+        for (int y = 0; y < f_x.Rows(); y++)
+            for (int x = 0; x < f_x.Cols(); x++)
+                x_deriv(x, y, 0, 0) = (uint8_t)*f_x.At(y, x);
+
+        cimg_library::CImgDisplay annotatedDisp(x_deriv,"Partial derivative (in X)");
+
+        while (!annotatedDisp.is_closed()) {
+            annotatedDisp.wait();
+        }
+
+        for (int y = 0; y < f_x.Rows(); y++)
+            for (int x = 0; x < f_x.Cols(); x++)
+                x_deriv(x, y, 0, 0) = (uint8_t)*f_y.At(y, x);
+
+        cimg_library::CImgDisplay annotatedDisp2(x_deriv,"Partial derivative (in Y)");
+
+        while (!annotatedDisp2.is_closed()) {
+            annotatedDisp2.wait();
+        }
+
+        Matrix<int> f_xx = Matrix<int>::ElementWise(f_x, f_x);
+
+        for (int y = 0; y < f_x.Rows(); y++)
+            for (int x = 0; x < f_x.Cols(); x++)
+                x_deriv(x, y, 0, 0) = (uint8_t)*f_xx.At(y, x);
+
+        cimg_library::CImgDisplay annotatedDisp3(x_deriv,"FXX");
+
+        while (!annotatedDisp3.is_closed()) {
+            annotatedDisp3.wait();
+        }
+
+        Matrix<int> f_xy = Matrix<int>::ElementWise(f_y, f_x);
+        Matrix<int> f_yy = Matrix<int>::ElementWise(f_y, f_y);
 
         /* TODO: Apply Gaussian filter to f_xx, f_xy, f_yy */
         // AKCHUALLY, the Sobel operator computes the gradient with
@@ -272,9 +307,9 @@ namespace ARKIT
 
         for (int i = offset; i < img.Rows() - offset; ++i) {
             for (int j = offset; j < img.Cols() - offset; ++j) {
-                Sxx = Matrix<int>::Sum(f_xx, j-offset, i-offset, j+offset, i+offset);
-                Syy = Matrix<int>::Sum(f_yy, j-offset, i-offset, j+offset, i+offset);
-                Sxy = Matrix<int>::Sum(f_xy, j-offset, i-offset, j+offset, i+offset);
+                Sxx = Matrix<int>::Sum(f_xx, i, j, this->window_size);
+                Syy = Matrix<int>::Sum(f_yy, i, j, this->window_size);
+                Sxy = Matrix<int>::Sum(f_xy, i, j, this->window_size);
                 det = (Sxx * Syy) - (Sxy * Sxy);
                 trace = Sxx + Syy;
                 r = det - this->sensitivity_factor * (trace * trace);
