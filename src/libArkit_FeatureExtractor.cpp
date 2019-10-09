@@ -5,6 +5,7 @@
  * Distributed under terms of the MIT license.
  */
 
+#include <cmath>
 #include "libArkit_FeatureExtractor.h"
 #include "../external/CImg.h"
 
@@ -244,7 +245,7 @@ namespace ARKIT
     {
         int offset = this->window_size / 2;
         int Sxx, Syy, Sxy;
-        double det, trace, r;
+        double det, trace, r, threshold;
 
         // 1. Spatial derivative calculation
         // Sobel operator kernel
@@ -263,7 +264,7 @@ namespace ARKIT
         Matrix<int> img = this->frame->GetMatrix();
         Matrix<int> f_x = Matrix<int>::Convolve(img, sobelX);
         Matrix<int> f_y = Matrix<int>::Convolve(img, sobelY);
-
+/*
         cimg_library::CImg<uint8_t> x_deriv(f_x.Cols(), f_x.Rows(), 1, 1, 0);
 
         for (int y = 0; y < f_x.Rows(); y++)
@@ -284,11 +285,11 @@ namespace ARKIT
 
         while (!annotatedDisp2.is_closed()) {
             annotatedDisp2.wait();
-        }
+        }*/
 
         Matrix<int> f_xx = Matrix<int>::ElementWise(f_x, f_x);
 
-        for (int y = 0; y < f_x.Rows(); y++)
+        /*for (int y = 0; y < f_x.Rows(); y++)
             for (int x = 0; x < f_x.Cols(); x++)
                 x_deriv(x, y, 0, 0) = (uint8_t)*f_xx.At(y, x);
 
@@ -297,7 +298,7 @@ namespace ARKIT
         while (!annotatedDisp3.is_closed()) {
             annotatedDisp3.wait();
         }
-
+*/
         Matrix<int> f_xy = Matrix<int>::ElementWise(f_y, f_x);
         Matrix<int> f_yy = Matrix<int>::ElementWise(f_y, f_y);
 
@@ -305,15 +306,29 @@ namespace ARKIT
         // AKCHUALLY, the Sobel operator computes the gradient with
         // smoothing...
 
+        threshold = 0;
+        Matrix<double> harrisResponse(img.Rows(), img.Cols());
         for (int i = offset; i < img.Rows() - offset; ++i) {
             for (int j = offset; j < img.Cols() - offset; ++j) {
                 Sxx = Matrix<int>::Sum(f_xx, i, j, this->window_size);
                 Syy = Matrix<int>::Sum(f_yy, i, j, this->window_size);
                 Sxy = Matrix<int>::Sum(f_xy, i, j, this->window_size);
-                det = (Sxx * Syy) - (Sxy * Sxy);
+                det = (Sxx * Syy) - pow(Sxy, 2);
                 trace = Sxx + Syy;
-                r = det - this->sensitivity_factor * (trace * trace);
-                if (r > 0 && (i > 5 && i < this->frame->Height()-5) && (j > 5 && j < this->frame->Width()-5)) {
+                r = det - this->sensitivity_factor * pow(trace, 2);
+                threshold += r;
+                *harrisResponse.At(i, j) = r;
+            }
+        }
+        threshold /= img.Rows() * img.Cols();
+        threshold = abs(0.1*threshold);
+        std::cout << "Threshold: " << threshold << std::endl;
+
+        for (int i = offset; i < img.Rows() - offset; ++i) {
+            for (int j = offset; j < img.Cols() - offset; ++j) {
+                if (*harrisResponse.At(i, j) > threshold && (i > 5 && i <
+                            this->frame->Height()-5) && (j > 5 && j <
+                            this->frame->Width()-5)) {
                     this->frame->WriteAt(j-5, i, 0);
                     this->frame->WriteAt(j-4, i, 0);
                     this->frame->WriteAt(j-3, i, 0);
@@ -339,7 +354,6 @@ namespace ARKIT
                 }
             }
         }
-
         return std::vector<Keypoint>();
     }
 

@@ -221,7 +221,7 @@ namespace ARKIT
 		Matrix<T> mul(m1.Rows(), m2.Rows());
 		for (int i = 0; i < m1.Rows(); ++i) {
 			for (int j = 0; j < m1.Cols(); ++j) {
-				*mul.At(i, j) = *m1.At(i,j) * *m2.At(i, j);
+				*mul.At(i, j) = *m1.At(i, j) * *m2.At(i, j);
 			}
 		}
 		return mul;

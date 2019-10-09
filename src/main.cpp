@@ -52,7 +52,7 @@ void lena()
 
 void squares()
 {
-    CImg<uint8_t> image("squares.jpg");
+    CImg<uint8_t> image("squares2.jpg");
 
     uint8_t **data = new uint8_t *[image.height()];
     for (int y = 0; y < image.height(); y++) {
