@@ -122,7 +122,7 @@ namespace ARKIT
      * Accelerated Segment Test algorithm with a given circular radius
      * (threshold)
      */
-    std::vector<Keypoint> ORBExtractor::FAST(Frame* f)
+    std::vector<Keypoint> ORBExtractor::FAST(Frame *f)
     {
         std::cout << "\t-> Extracting keypoints (FAST)..." << std::endl;
         /*
@@ -243,12 +243,9 @@ namespace ARKIT
      */
     std::vector<Keypoint> ORBExtractor::HarrisFilter(bool smoothing/*std::vector<Keypoint> keypoints*/)
     {
-        int offset = this->window_size / 2, count = 0;
+        int offset = this->window_size / 2, count = 0, nonMaxWindowSize = 6;
         double Sxx, Syy, Sxy;
         double det, trace, r, threshold;
-
-        // 1. Spatial derivative calculation
-        // Sobel operator kernel
         double sX[3][3] = {
             {-1, 0, 1},
             {-2, 0, 2},
@@ -272,10 +269,6 @@ namespace ARKIT
         Matrix<double> f_xy = Matrix<double>::ElementWiseProduct(f_y, f_x);
         Matrix<double> f_yy = Matrix<double>::ElementWiseProduct(f_y, f_y);
 
-        /*Matrix<double> f_xx_smooth = Matrix<double>::Convolve(f_xx, gaussianKernel);
-        Matrix<double> f_xy_smooth = Matrix<double>::Convolve(f_xy, gaussianKernel);
-        Matrix<double> f_yy_smooth = Matrix<double>::Convolve(f_yy, gaussianKernel);*/
-
         threshold = 0;
         Matrix<double> harrisResponse(img.Rows(), img.Cols());
         for (int i = offset; i < img.Rows() - offset; ++i) {
@@ -295,6 +288,23 @@ namespace ARKIT
         threshold = abs(0.1*threshold); // TODO: Set class property
         std::cout << "Damped threshold: " << threshold << std::endl;
 
+        /* Non-maximum suppression */
+        offset = nonMaxWindowSize/2;
+        for (int i = nonMaxWindowSize; i < harrisResponse.Rows() - nonMaxWindowSize; ++i) {
+            for (int j = nonMaxWindowSize; j < harrisResponse.Cols() - nonMaxWindowSize; ++j) {
+                for (int k = -offset; k <= offset; ++k) {
+                    for (int l = -offset; l <= offset; ++l) {
+                        if (*harrisResponse(i+k, j+l) > *harrisResponse(i, j)) {
+                            *harrisResponse(i, j) = 0;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+
+        /* Visualization */
         for (int i = offset; i < img.Rows() - offset; ++i) {
             for (int j = offset; j < img.Cols() - offset; ++j) {
                 if (*harrisResponse(i, j) > threshold && (i > 5 && i <
@@ -367,8 +377,8 @@ namespace ARKIT
 
         assert(this->frame != nullptr);
         // STEP 1: Build the scale pyramid of the current frame
-        /*std::cout << "\t-> Building the pyramid" << std::endl;
-        ScalePyramid pyramid = this->BuildPyramid();
+        std::cout << "\t-> Building the pyramid" << std::endl;
+        /*ScalePyramid pyramid = this->BuildPyramid();
 
         auto start = std::chrono::steady_clock::now();
         this->FAST(this->frame);
@@ -381,7 +391,7 @@ namespace ARKIT
         auto start = std::chrono::steady_clock::now();
         this->HarrisFilter(true);
         auto end = std::chrono::steady_clock::now();
-        std::cout << "[*] Harris filter executed in "
+        std::cout << "[*] Harris corner executed in "
             <<
             (float)std::chrono::duration_cast<std::chrono::microseconds>(end
                     - start).count()/1000

@@ -43,19 +43,18 @@ namespace ARKIT
 		    Matrix operator*(const Matrix m);
 		    T* operator()(int m, int n) const;
 		    T *At(int m, int n) const;
+		    Matrix Transposed() const;
+		    void Transpose();
+		    void Print() const;
 		    int Rows() const;
 		    int Cols() const;
 			/* Returns the central part of the convolution
                 that is the same size as A.*/
-			//static Matrix Convolve(Frame *f, Matrix<T> &m);
 		    static Matrix Convolve(const Matrix &m, const Matrix &kernel);
 		    static T Sum(const Matrix<T> &m, const int row, const int col, const int windowSize);
 			// Hadamard product of two matrices of the same size
 			static Matrix ElementWiseProduct(const Matrix &m1, const Matrix &m2);
 			static Matrix MakeGaussianKernel(const int radius);
-		    Matrix Transposed() const;
-		    void Transpose();
-		    void Print() const;
     };
 
     template <class T>
