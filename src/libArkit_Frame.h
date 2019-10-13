@@ -65,7 +65,8 @@ namespace ARKIT
             void WriteAt(unsigned int x, unsigned int y, unsigned char val);
             int Width() const;
             int Height() const;
-            Matrix<int> GetMatrix();
+            Matrix<int> GetIntMatrix();
+            Matrix<double> GetDoubleMatrix();
             Frame operator*(const Frame f) const;
     };
 }

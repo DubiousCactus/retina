@@ -243,76 +243,44 @@ namespace ARKIT
      */
     std::vector<Keypoint> ORBExtractor::HarrisFilter(/*std::vector<Keypoint> keypoints*/)
     {
-        int offset = this->window_size / 2;
-        int Sxx, Syy, Sxy;
+        int offset = this->window_size / 2, count = 0;
+        double Sxx, Syy, Sxy;
         double det, trace, r, threshold;
 
         // 1. Spatial derivative calculation
         // Sobel operator kernel
-        int sX[3][3] = {
+        double sX[3][3] = {
             {-1, 0, 1},
             {-2, 0, 2},
             {-1, 0, 1}
         };
-        int sY[3][3] = {
+        double sY[3][3] = {
             {-1, -2, -1},
             {0, 0, 0},
             {1, 2, 1}
         };
-        Matrix<int> sobelX(sX);
-        Matrix<int> sobelY(sY);
-        Matrix<int> img = this->frame->GetMatrix();
-        Matrix<int> f_x = Matrix<int>::Convolve(img, sobelX);
-        Matrix<int> f_y = Matrix<int>::Convolve(img, sobelY);
-/*
-        cimg_library::CImg<uint8_t> x_deriv(f_x.Cols(), f_x.Rows(), 1, 1, 0);
+        Matrix<double> sobelX(sX);
+        Matrix<double> sobelY(sY);
+        Matrix<double> img = this->frame->GetDoubleMatrix();
+        Matrix<double> f_x = Matrix<double>::Convolve(img, sobelX);
+        Matrix<double> f_y = Matrix<double>::Convolve(img, sobelY);
 
-        for (int y = 0; y < f_x.Rows(); y++)
-            for (int x = 0; x < f_x.Cols(); x++)
-                x_deriv(x, y, 0, 0) = (uint8_t)*f_x.At(y, x);
+        Matrix<double> f_xx = Matrix<double>::ElementWiseProduct(f_x, f_x);
+        Matrix<double> f_xy = Matrix<double>::ElementWiseProduct(f_y, f_x);
+        Matrix<double> f_yy = Matrix<double>::ElementWiseProduct(f_y, f_y);
 
-        cimg_library::CImgDisplay annotatedDisp(x_deriv,"Partial derivative (in X)");
-
-        while (!annotatedDisp.is_closed()) {
-            annotatedDisp.wait();
-        }
-
-        for (int y = 0; y < f_x.Rows(); y++)
-            for (int x = 0; x < f_x.Cols(); x++)
-                x_deriv(x, y, 0, 0) = (uint8_t)*f_y.At(y, x);
-
-        cimg_library::CImgDisplay annotatedDisp2(x_deriv,"Partial derivative (in Y)");
-
-        while (!annotatedDisp2.is_closed()) {
-            annotatedDisp2.wait();
-        }*/
-
-        Matrix<int> f_xx = Matrix<int>::ElementWise(f_x, f_x);
-
-        /*for (int y = 0; y < f_x.Rows(); y++)
-            for (int x = 0; x < f_x.Cols(); x++)
-                x_deriv(x, y, 0, 0) = (uint8_t)*f_xx.At(y, x);
-
-        cimg_library::CImgDisplay annotatedDisp3(x_deriv,"FXX");
-
-        while (!annotatedDisp3.is_closed()) {
-            annotatedDisp3.wait();
-        }
-*/
-        Matrix<int> f_xy = Matrix<int>::ElementWise(f_y, f_x);
-        Matrix<int> f_yy = Matrix<int>::ElementWise(f_y, f_y);
-
-        /* TODO: Apply Gaussian filter to f_xx, f_xy, f_yy */
-        // AKCHUALLY, the Sobel operator computes the gradient with
-        // smoothing...
+        Matrix<double> gaussianKernel = Matrix<double>::MakeGaussianKernel(3);
+        Matrix<double> f_xx_smooth = Matrix<double>::Convolve(f_xx, gaussianKernel);
+        Matrix<double> f_xy_smooth = Matrix<double>::Convolve(f_xy, gaussianKernel);
+        Matrix<double> f_yy_smooth = Matrix<double>::Convolve(f_yy, gaussianKernel);
 
         threshold = 0;
         Matrix<double> harrisResponse(img.Rows(), img.Cols());
         for (int i = offset; i < img.Rows() - offset; ++i) {
             for (int j = offset; j < img.Cols() - offset; ++j) {
-                Sxx = Matrix<int>::Sum(f_xx, i, j, this->window_size);
-                Syy = Matrix<int>::Sum(f_yy, i, j, this->window_size);
-                Sxy = Matrix<int>::Sum(f_xy, i, j, this->window_size);
+                Sxx = Matrix<double>::Sum(f_xx_smooth, i, j, this->window_size);
+                Syy = Matrix<double>::Sum(f_yy_smooth, i, j, this->window_size);
+                Sxy = Matrix<double>::Sum(f_xy_smooth, i, j, this->window_size);
                 det = (Sxx * Syy) - pow(Sxy, 2);
                 trace = Sxx + Syy;
                 r = det - this->sensitivity_factor * pow(trace, 2);
@@ -321,8 +289,9 @@ namespace ARKIT
             }
         }
         threshold /= img.Rows() * img.Cols();
-        threshold = abs(0.1*threshold);
         std::cout << "Threshold: " << threshold << std::endl;
+        threshold *= 10;
+        std::cout << "Damped threshold: " << threshold << std::endl;
 
         for (int i = offset; i < img.Rows() - offset; ++i) {
             for (int j = offset; j < img.Cols() - offset; ++j) {
@@ -351,9 +320,11 @@ namespace ARKIT
                     this->frame->WriteAt(j, i+3, 0);
                     this->frame->WriteAt(j, i+2, 0);
                     this->frame->WriteAt(j, i+1, 0);
+                    count++;
                 }
             }
         }
+        std::cout << "[*]" << count << " IP found!" << std::endl;
         return std::vector<Keypoint>();
     }
 

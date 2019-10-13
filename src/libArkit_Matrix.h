@@ -8,6 +8,7 @@
 #ifndef LIBARKIT_MATRIX_H
 #define LIBARKIT_MATRIX_H
 
+#include <cmath>
 #include <cstddef>
 
 namespace ARKIT
@@ -36,6 +37,7 @@ namespace ARKIT
 		    Matrix(T **data, int rows, int cols);
 		    Matrix(int rows, int cols);
 		    ~Matrix();
+		    // TODO: Operator () instead of At()
 		    T *At(int m, int n);
 		    int Rows();
 		    int Cols();
@@ -45,7 +47,8 @@ namespace ARKIT
 		    static Matrix Convolve(Matrix<T> &m, Matrix<T> &kernel);
 		    static T Sum(Matrix<T> &m, int row, int col, int windowSize);
 			// Hadamard product of two matrices of the same size
-			static Matrix<T> ElementWise(Matrix<T> &m1, Matrix<T> &m2);
+			static Matrix<T> ElementWiseProduct(Matrix<T> &m1, Matrix<T> &m2);
+			static Matrix<T> MakeGaussianKernel(int radius);
 		    Matrix Transpose();
 		    Matrix operator*(Matrix<T> m);
 		    void Print();
@@ -183,6 +186,32 @@ namespace ARKIT
 		}*/
 		return c;
     }
+
+    template <class T>
+    Matrix<T> Matrix<T>::MakeGaussianKernel(int radius)
+	{
+		assert((radius % 2) != 0); // Kernel must be odd in order to have a central element
+		Matrix<T> kernel(2*radius+1, 2*radius+1);
+		double sum = 0, sigma = radius/2.0, x;
+		auto Gaussian = [](double x, double mu, double sigma) {
+			return exp(-0.5 * pow((x - mu) / sigma, 2));
+		};
+		for (int i = 0; i < kernel.Rows(); ++i) {
+			for (int j = 0; j < kernel.Cols(); ++j) {
+				x =  Gaussian(i, radius, sigma) *
+					Gaussian(j, radius, sigma);
+				*kernel.At(i, j) = x;
+				sum += x;
+			}
+		}
+		// Normalization
+		for (int i = 0; i < kernel.Rows(); ++i) {
+			for (int j = 0; j < kernel.Cols(); ++j) {
+				*kernel.At(i, j) /= sum;
+			}
+		}
+		return kernel;
+	}
 /*
 	template <class T>
     T Matrix<T>::Sum(Matrix<T> &m, int xmin, int ymin, int xmax, int ymax)
@@ -214,7 +243,7 @@ namespace ARKIT
     }
 
     template <class T>
-    Matrix<T> Matrix<T>::ElementWise(Matrix<T> &m1, Matrix<T> &m2)
+    Matrix<T> Matrix<T>::ElementWiseProduct(Matrix<T> &m1, Matrix<T> &m2)
 	{
 		assert(m1.Rows() == m2.Rows());
 		assert(m1.Cols() == m2.Cols());
@@ -244,6 +273,12 @@ namespace ARKIT
 		}
 		return mul;
     }
+
+	/*template <class T>
+	*T Matrix<T>::operator()(int row, int col)
+	{
+		return this->At(row, col);
+	}*/
 
 	template <class T>
     Matrix<T> Matrix<T>::Transpose()

@@ -50,12 +50,23 @@ namespace ARKIT
         this->data[y][x] = val;
     }
 
-    Matrix<int> Frame::GetMatrix()
+    Matrix<int> Frame::GetIntMatrix()
     {
         Matrix<int> intMat(this->height, this->width);
         for (int i = 0; i < this->height; ++i) {
             for (int j = 0; j < this->width; ++j) {
                 *intMat.At(i, j) = (int)this->RawAt(j, i);
+            }
+        }
+        return intMat;
+    }
+
+    Matrix<double> Frame::GetDoubleMatrix()
+    {
+        Matrix<double> intMat(this->height, this->width);
+        for (int i = 0; i < this->height; ++i) {
+            for (int j = 0; j < this->width; ++j) {
+                *intMat.At(i, j) = (double)this->RawAt(j, i);
             }
         }
         return intMat;
