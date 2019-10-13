@@ -241,7 +241,7 @@ namespace ARKIT
     /* Order the FAST keypoints and return the N top points using the
      * Harris corner measure
      */
-    std::vector<Keypoint> ORBExtractor::HarrisFilter(/*std::vector<Keypoint> keypoints*/)
+    std::vector<Keypoint> ORBExtractor::HarrisFilter(bool smoothing/*std::vector<Keypoint> keypoints*/)
     {
         int offset = this->window_size / 2, count = 0;
         double Sxx, Syy, Sxy;
@@ -261,7 +261,10 @@ namespace ARKIT
         };
         Matrix<double> sobelX(sX);
         Matrix<double> sobelY(sY);
-        Matrix<double> img = this->frame->GetDoubleMatrix();
+        Matrix<double> gaussianKernel = Matrix<double>::MakeGaussianKernel(3);
+        Matrix<double> img = smoothing 
+            ? Matrix<double>::Convolve(this->frame->GetDoubleMatrix(), gaussianKernel)
+            : this->frame->GetDoubleMatrix();
         Matrix<double> f_x = Matrix<double>::Convolve(img, sobelX);
         Matrix<double> f_y = Matrix<double>::Convolve(img, sobelY);
 
@@ -269,18 +272,17 @@ namespace ARKIT
         Matrix<double> f_xy = Matrix<double>::ElementWiseProduct(f_y, f_x);
         Matrix<double> f_yy = Matrix<double>::ElementWiseProduct(f_y, f_y);
 
-        Matrix<double> gaussianKernel = Matrix<double>::MakeGaussianKernel(3);
-        Matrix<double> f_xx_smooth = Matrix<double>::Convolve(f_xx, gaussianKernel);
+        /*Matrix<double> f_xx_smooth = Matrix<double>::Convolve(f_xx, gaussianKernel);
         Matrix<double> f_xy_smooth = Matrix<double>::Convolve(f_xy, gaussianKernel);
-        Matrix<double> f_yy_smooth = Matrix<double>::Convolve(f_yy, gaussianKernel);
+        Matrix<double> f_yy_smooth = Matrix<double>::Convolve(f_yy, gaussianKernel);*/
 
         threshold = 0;
         Matrix<double> harrisResponse(img.Rows(), img.Cols());
         for (int i = offset; i < img.Rows() - offset; ++i) {
             for (int j = offset; j < img.Cols() - offset; ++j) {
-                Sxx = Matrix<double>::Sum(f_xx_smooth, i, j, this->window_size);
-                Syy = Matrix<double>::Sum(f_yy_smooth, i, j, this->window_size);
-                Sxy = Matrix<double>::Sum(f_xy_smooth, i, j, this->window_size);
+                Sxx = Matrix<double>::Sum(f_xx, i, j, this->window_size);
+                Syy = Matrix<double>::Sum(f_yy, i, j, this->window_size);
+                Sxy = Matrix<double>::Sum(f_xy, i, j, this->window_size);
                 det = (Sxx * Syy) - pow(Sxy, 2);
                 trace = Sxx + Syy;
                 r = det - this->sensitivity_factor * pow(trace, 2);
@@ -290,7 +292,7 @@ namespace ARKIT
         }
         threshold /= img.Rows() * img.Cols();
         std::cout << "Threshold: " << threshold << std::endl;
-        threshold *= 10;
+        threshold = abs(0.1*threshold); // TODO: Set class property
         std::cout << "Damped threshold: " << threshold << std::endl;
 
         for (int i = offset; i < img.Rows() - offset; ++i) {
@@ -377,7 +379,7 @@ namespace ARKIT
                     - start).count()/1000
             << " milliseconds" << std::endl;*/
         auto start = std::chrono::steady_clock::now();
-        this->HarrisFilter();
+        this->HarrisFilter(true);
         auto end = std::chrono::steady_clock::now();
         std::cout << "[*] Harris filter executed in "
             <<

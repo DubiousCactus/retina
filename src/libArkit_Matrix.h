@@ -8,6 +8,7 @@
 #ifndef LIBARKIT_MATRIX_H
 #define LIBARKIT_MATRIX_H
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 
@@ -36,22 +37,25 @@ namespace ARKIT
 
 		    Matrix(T **data, int rows, int cols);
 		    Matrix(int rows, int cols);
+		    Matrix(const Matrix& m);
 		    ~Matrix();
+			Matrix& operator=(Matrix m);
+		    Matrix operator*(const Matrix m);
 		    // TODO: Operator () instead of At()
-		    T *At(int m, int n);
-		    int Rows();
-		    int Cols();
+		    T *At(int m, int n) const;
+		    int Rows() const;
+		    int Cols() const;
 			/* Returns the central part of the convolution
                 that is the same size as A.*/
 			//static Matrix Convolve(Frame *f, Matrix<T> &m);
-		    static Matrix Convolve(Matrix<T> &m, Matrix<T> &kernel);
-		    static T Sum(Matrix<T> &m, int row, int col, int windowSize);
+		    static Matrix Convolve(const Matrix &m, const Matrix &kernel);
+		    static T Sum(const Matrix<T> &m, const int row, const int col, const int windowSize);
 			// Hadamard product of two matrices of the same size
-			static Matrix<T> ElementWiseProduct(Matrix<T> &m1, Matrix<T> &m2);
-			static Matrix<T> MakeGaussianKernel(int radius);
-		    Matrix Transpose();
-		    Matrix operator*(Matrix<T> m);
-		    void Print();
+			static Matrix ElementWiseProduct(const Matrix &m1, const Matrix &m2);
+			static Matrix MakeGaussianKernel(const int radius);
+		    Matrix Transposed() const;
+		    void Transpose();
+		    void Print() const;
     };
 
     template <class T>
@@ -73,14 +77,49 @@ namespace ARKIT
 		this->cols = cols;
     }
 
+    template <class T>
+	Matrix<T>::Matrix(const Matrix<T>& m)
+	{
+		this->rows = m.rows;
+		this->cols = m.cols;
+		this->data = new T*[rows];
+		for (int i = 0; i < rows; ++i) {
+			this->data[i] = new T[cols];
+			for (int j = 0; j < cols; ++j) {
+				this->data[i][j] = m.data[i][j];
+			}
+		}
+	}
+
 	template <class T>
     Matrix<T>::~Matrix()
     {
 		free(this->data);
     }
 
+    template <class T>
+    Matrix<T>& Matrix<T>::operator=(Matrix<T> m)
+	{
+		std::swap(rows, m.rows);
+		std::swap(cols, m.cols);
+		std::swap(data, m.data);
+		// TODO: Make exception safe with std::swap
+		/*if (this != &m) {
+			this->rows = m.rows;
+			this->cols = m.cols;
+			this->data = new T*[rows];
+			for (int i = 0; i < rows; ++i) {
+				this->data[i] = new T[cols];
+				for (int j = 0; j < cols; ++j) {
+					this->data[i][j] = m.data[i][j];
+				}
+			}
+		}*/
+		return *this;
+	}
+
 	template <class T>
-    T *Matrix<T>::At(int m, int n)
+    T *Matrix<T>::At(const int m, const int n) const
     {
 		assert(m < this->rows);
 		assert(n < this->cols);
@@ -148,7 +187,7 @@ namespace ARKIT
     }*/
 
 	template <class T>
-    Matrix<T> Matrix<T>::Convolve(Matrix<T> &m, Matrix<T> &kernel)
+    Matrix<T> Matrix<T>::Convolve(const Matrix<T> &m, const Matrix<T> &kernel)
     {
 		assert(kernel.Rows() == kernel.Cols()); // Only work with square kernels
 		assert((kernel.Rows() % 2) != 0); // Only work with odd kernels
@@ -188,7 +227,7 @@ namespace ARKIT
     }
 
     template <class T>
-    Matrix<T> Matrix<T>::MakeGaussianKernel(int radius)
+    Matrix<T> Matrix<T>::MakeGaussianKernel(const int radius)
 	{
 		assert((radius % 2) != 0); // Kernel must be odd in order to have a central element
 		Matrix<T> kernel(2*radius+1, 2*radius+1);
@@ -230,7 +269,7 @@ namespace ARKIT
     }*/
 
 	template <class T>
-    T Matrix<T>::Sum(Matrix<T> &m, int row, int col, int windowSize)
+    T Matrix<T>::Sum(const Matrix<T> &m, const int row, const int col, const int windowSize)
     {
 		int sum = 0;
 		int offset = windowSize/2;
@@ -243,7 +282,7 @@ namespace ARKIT
     }
 
     template <class T>
-    Matrix<T> Matrix<T>::ElementWiseProduct(Matrix<T> &m1, Matrix<T> &m2)
+    Matrix<T> Matrix<T>::ElementWiseProduct(const Matrix<T> &m1, const Matrix<T> &m2)
 	{
 		assert(m1.Rows() == m2.Rows());
 		assert(m1.Cols() == m2.Cols());
@@ -257,7 +296,7 @@ namespace ARKIT
 	}
 
 	template <class T>
-    Matrix<T> Matrix<T>::operator*(Matrix<T> m)
+    Matrix<T> Matrix<T>::operator*(const Matrix<T> m)
     {
 		assert(this->cols == m.Rows());
 		int sum;
@@ -281,7 +320,7 @@ namespace ARKIT
 	}*/
 
 	template <class T>
-    Matrix<T> Matrix<T>::Transpose()
+    Matrix<T> Matrix<T>::Transposed() const
     {
 		Matrix<T> t(this->cols, this->rows);
 		for (int i = 0; i < this->rows; ++i) {
@@ -293,19 +332,31 @@ namespace ARKIT
     }
 
 	template <class T>
-    int Matrix<T>::Rows()
+    void Matrix<T>::Transpose()
+    {
+		Matrix<T> t(this->cols, this->rows);
+		for (int i = 0; i < this->rows; ++i) {
+			for (int j = 0; j < this->cols; ++j) {
+				*t.At(j, i) = *this->At(i, j);
+			}
+		}
+		this = t;
+    }
+
+	template <class T>
+    int Matrix<T>::Rows() const
     {
 		return this->rows;
     }
 
 	template <class T>
-    int Matrix<T>::Cols()
+    int Matrix<T>::Cols() const
     {
 		return this->cols;
     }
 
     template <class T>
-	void Matrix<T>::Print()
+	void Matrix<T>::Print() const
 	{
 		for (int i = 0; i < this->rows; ++i) {
 			for (int j = 0; j < this->cols; ++j) {

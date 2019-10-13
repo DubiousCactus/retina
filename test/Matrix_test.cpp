@@ -55,7 +55,7 @@ TEST(Matrix, Transpose) {
         {3, 6}
     };
     ARKIT::Matrix<int> m(data);
-    auto transpose = m.Transpose();
+    auto transpose = m.Transposed();
     EXPECT_EQ(transpose.Rows(), m.Cols());
     EXPECT_EQ(transpose.Cols(), m.Rows());
     for (int i = 0; i < transpose.Rows(); i++) {
@@ -79,7 +79,7 @@ TEST(Matrix, Transpose) {
         { 5, 0, 5, 11, -44 }
     };
     ARKIT::Matrix<long> m2(square);
-    auto t = m2.Transpose();
+    auto t = m2.Transposed();
     EXPECT_EQ(t.Rows(), m2.Cols());
     EXPECT_EQ(t.Cols(), m2.Rows());
     for (int i = 0; i < t.Rows(); i++) {
@@ -126,7 +126,7 @@ TEST(Matrix, Mul) {
     ARKIT::Matrix<int> m(data);
     ARKIT::Matrix<int> o(op);
     ARKIT::Matrix<int> r(res);
-    auto mul = m * o.Transpose();
+    auto mul = m * o.Transposed();
     EXPECT_EQ(mul.Rows(), r.Rows());
     EXPECT_EQ(mul.Cols(), r.Cols());
     for (int i = 0; i < r.Rows(); i++) {

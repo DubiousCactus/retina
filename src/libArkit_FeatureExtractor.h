@@ -72,7 +72,7 @@ namespace ARKIT
             /* Order the FAST keypoints and return the N top points using the
              * Harris corner measure
              */
-            std::vector<Keypoint> HarrisFilter(/*std::vector<Keypoint> keypoints*/);
+            std::vector<Keypoint> HarrisFilter(bool smoothing/*std::vector<Keypoint> keypoints*/);
 
             /* Build a scale pyramid of the base image */
             ScalePyramid BuildPyramid();
