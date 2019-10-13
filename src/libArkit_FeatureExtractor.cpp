@@ -287,7 +287,7 @@ namespace ARKIT
                 trace = Sxx + Syy;
                 r = det - this->sensitivity_factor * pow(trace, 2);
                 threshold += r;
-                *harrisResponse.At(i, j) = r;
+                *harrisResponse(i, j) = r;
             }
         }
         threshold /= img.Rows() * img.Cols();
@@ -297,7 +297,7 @@ namespace ARKIT
 
         for (int i = offset; i < img.Rows() - offset; ++i) {
             for (int j = offset; j < img.Cols() - offset; ++j) {
-                if (*harrisResponse.At(i, j) > threshold && (i > 5 && i <
+                if (*harrisResponse(i, j) > threshold && (i > 5 && i <
                             this->frame->Height()-5) && (j > 5 && j <
                             this->frame->Width()-5)) {
                     this->frame->WriteAt(j-5, i, 0);
