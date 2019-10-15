@@ -1,28 +1,41 @@
 /*
- * libArkit_FeatureExtractor.cpp
+ * libArkit_FAST.cpp
  * Copyright (C) 2019 transpalette <transpalette@arch-cactus>
  *
  * Distributed under terms of the MIT license.
  */
 
-#include <cmath>
-#include "libArkit_FeatureExtractor.h"
-#include "../external/CImg.h"
+#include "libArkit_FAST.h"
+
 
 namespace ARKIT
 {
+    FASTExtractor::FASTExtractor(unsigned short radius, unsigned short
+                    intensity_threshold, unsigned short contiguous_pixels,
+                    unsigned short top_n_keypoints, unsigned short n_keypoints,
+                    bool full_high_speed_test, bool annotate)
+    {
+        this->full_high_speed_test = full_high_speed_test;
+        this->intensity_threshold = intensity_threshold;
+        this->contiguous_pixels = contiguous_pixels;
+        this->top_n_keypoints = top_n_keypoints;
+        this->n_keypoints = n_keypoints;
+        this->radius = radius; // For a circle of 16 pixels
+        this->annotate = annotate;
+    }
 
     /*
      * Bresenham's circle drawing algorithm
      */
-    std::vector<Pixel*> ORBExtractor::BresenhamCircle(Pixel center, int radius, Frame* frame)
+    std::vector<Pixel*> FASTExtractor::BresenhamCircle(const Pixel center, int
+            radius, const Frame* frame)
     {
         std::vector<Pixel*> circlePixels;
         circlePixels.reserve(radius*8);
         Pixel to(0, radius);
         int d = 3 - (2 * radius);
 
-        auto EightWaySymmetricPlot = [] (Pixel c, Pixel t, Frame* f,
+        auto EightWaySymmetricPlot = [] (const Pixel c, Pixel t, const Frame* f,
                 std::vector<Pixel*>& circle) {
             circle.push_back(f->PixelAt(c.x + t.x, c.y - t.y));
             circle.push_back(f->PixelAt(c.x + t.x, c.y + t.y));
@@ -122,7 +135,7 @@ namespace ARKIT
      * Accelerated Segment Test algorithm with a given circular radius
      * (threshold)
      */
-    std::vector<Keypoint> ORBExtractor::FAST(Frame *f)
+    std::vector<Keypoint> FASTExtractor::Extract(const Frame *f)
     {
         std::cout << "\t-> Extracting keypoints (FAST)..." << std::endl;
         /*
@@ -136,8 +149,7 @@ namespace ARKIT
          *  darker than I - t. (n, or threshold, can be chosen to be 12)
          * 6. Non-maximal suppression (not in the case of ORB though)
          */
-        int keypoints = 0;
-
+        this->annotated_frame = annotate ?  new Frame(*f) : NULL;
         for (int y = this->radius; y < (f->Height() - this->radius); y++) {
             for (int x = this->radius; x < (f->Width() - this->radius); x++) {
                 int Ip = f->RawAt(x,y);
@@ -226,197 +238,24 @@ namespace ARKIT
                 }
 
                 if (corner) {
-                    keypoints++;
-                    for (auto p = circle.begin(); p != circle.end(); p++)
-                        f->WriteAt((*p)->x, (*p)->y, 0);
-                }
-            }
-        }
-
-        std::cout<< "\t-> Found " << keypoints << " keypoints" << std::endl;
-
-        return std::vector<Keypoint>();
-    }
-
-    /* Order the FAST keypoints and return the N top points using the
-     * Harris corner measure
-     */
-    std::vector<Keypoint> ORBExtractor::HarrisFilter(bool smoothing/*std::vector<Keypoint> keypoints*/)
-    {
-        int offset = this->window_size / 2, count = 0, nonMaxWindowSize = 6;
-        double Sxx, Syy, Sxy;
-        double det, trace, r, threshold;
-        double sX[3][3] = {
-            {-1, 0, 1},
-            {-2, 0, 2},
-            {-1, 0, 1}
-        };
-        double sY[3][3] = {
-            {-1, -2, -1},
-            {0, 0, 0},
-            {1, 2, 1}
-        };
-        Matrix<double> sobelX(sX);
-        Matrix<double> sobelY(sY);
-        Matrix<double> gaussianKernel = Matrix<double>::MakeGaussianKernel(3);
-        Matrix<double> img = smoothing 
-            ? Matrix<double>::Convolve(this->frame->GetDoubleMatrix(), gaussianKernel)
-            : this->frame->GetDoubleMatrix();
-        Matrix<double> f_x = Matrix<double>::Convolve(img, sobelX);
-        Matrix<double> f_y = Matrix<double>::Convolve(img, sobelY);
-
-        Matrix<double> f_xx = Matrix<double>::ElementWiseProduct(f_x, f_x);
-        Matrix<double> f_xy = Matrix<double>::ElementWiseProduct(f_y, f_x);
-        Matrix<double> f_yy = Matrix<double>::ElementWiseProduct(f_y, f_y);
-
-        threshold = 0;
-        Matrix<double> harrisResponse(img.Rows(), img.Cols());
-        for (int i = offset; i < img.Rows() - offset; ++i) {
-            for (int j = offset; j < img.Cols() - offset; ++j) {
-                Sxx = Matrix<double>::Sum(f_xx, i, j, this->window_size);
-                Syy = Matrix<double>::Sum(f_yy, i, j, this->window_size);
-                Sxy = Matrix<double>::Sum(f_xy, i, j, this->window_size);
-                det = (Sxx * Syy) - pow(Sxy, 2);
-                trace = Sxx + Syy;
-                r = det - this->sensitivity_factor * pow(trace, 2);
-                threshold += r;
-                *harrisResponse(i, j) = r;
-            }
-        }
-        threshold /= img.Rows() * img.Cols();
-        std::cout << "Threshold: " << threshold << std::endl;
-        threshold = abs(0.1*threshold); // TODO: Set class property
-        std::cout << "Damped threshold: " << threshold << std::endl;
-
-        /* Non-maximum suppression */
-        offset = nonMaxWindowSize/2;
-        for (int i = nonMaxWindowSize; i < harrisResponse.Rows() - nonMaxWindowSize; ++i) {
-            for (int j = nonMaxWindowSize; j < harrisResponse.Cols() - nonMaxWindowSize; ++j) {
-                for (int k = -offset; k <= offset; ++k) {
-                    for (int l = -offset; l <= offset; ++l) {
-                        if (*harrisResponse(i+k, j+l) > *harrisResponse(i, j)) {
-                            *harrisResponse(i, j) = 0;
-                            break;
-                        }
+                    for (auto p = circle.begin(); p != circle.end(); p++) {
+                        this->keypoints.push_back(Keypoint((*p)->x, (*p)->y));
                     }
                 }
             }
         }
 
+        std::cout<< "\t-> Found " << this->keypoints.size() << " keypoints" << std::endl;
 
-        /* Visualization */
-        for (int i = offset; i < img.Rows() - offset; ++i) {
-            for (int j = offset; j < img.Cols() - offset; ++j) {
-                if (*harrisResponse(i, j) > threshold && (i > 5 && i <
-                            this->frame->Height()-5) && (j > 5 && j <
-                            this->frame->Width()-5)) {
-                    this->frame->WriteAt(j-5, i, 0);
-                    this->frame->WriteAt(j-4, i, 0);
-                    this->frame->WriteAt(j-3, i, 0);
-                    this->frame->WriteAt(j-2, i, 0);
-                    this->frame->WriteAt(j-1, i, 0);
-                    this->frame->WriteAt(j, i, 0);
-                    this->frame->WriteAt(j+5, i, 0);
-                    this->frame->WriteAt(j+4, i, 0);
-                    this->frame->WriteAt(j+3, i, 0);
-                    this->frame->WriteAt(j+2, i, 0);
-                    this->frame->WriteAt(j+1, i, 0);
-                    this->frame->WriteAt(j, i-5, 0);
-                    this->frame->WriteAt(j, i-4, 0);
-                    this->frame->WriteAt(j, i-3, 0);
-                    this->frame->WriteAt(j, i-2, 0);
-                    this->frame->WriteAt(j, i-1, 0);
-                    this->frame->WriteAt(j, i, 0);
-                    this->frame->WriteAt(j, i+5, 0);
-                    this->frame->WriteAt(j, i+4, 0);
-                    this->frame->WriteAt(j, i+3, 0);
-                    this->frame->WriteAt(j, i+2, 0);
-                    this->frame->WriteAt(j, i+1, 0);
-                    count++;
-                }
-            }
-        }
-        std::cout << "[*]" << count << " IP found!" << std::endl;
-        return std::vector<Keypoint>();
-    }
-
-    /* Build a scale pyramid of the base image */
-    ScalePyramid ORBExtractor::BuildPyramid()
-    {
-        ScalePyramid pyramid;
-        for (unsigned short i = 0; i < this->pog_levels; i++)
-            pyramid.scales.push_back(this->frame);
-
-        return pyramid;
-    }
-
-    float IntensityCentroid();
-
-    ORBExtractor::ORBExtractor(Frame& f)
-    {
-        this->full_high_speed_test = false;
-        this->sensitivity_factor = 0.04;
-        this->intensity_threshold = 9;
-        this->contiguous_pixels = 12;
-        this->top_n_keypoints = 50;
-        this->n_keypoints = 150;
-        this->window_size = 3;
-        this->pog_levels = 1;
-        this->radius = 3; // For a circle of 16 pixels
-        this->frame = &f;
-    }
-    ORBExtractor::~ORBExtractor() {}
-
-    void ORBExtractor::Extract()
-    {
-        /*
-         * 1. Build the PoG to produce multiscale-features
-         * 2. Find keypoints with FAST at each level of the pyramid
-         * 3. Apply Harris corner measure to find the top N points
-         */
-
-        assert(this->frame != nullptr);
-        // STEP 1: Build the scale pyramid of the current frame
-        std::cout << "\t-> Building the pyramid" << std::endl;
-        /*ScalePyramid pyramid = this->BuildPyramid();
-
-        auto start = std::chrono::steady_clock::now();
-        this->FAST(this->frame);
-        auto end = std::chrono::steady_clock::now();
-        std::cout << "[*] FAST executed in "
-            <<
-            (float)std::chrono::duration_cast<std::chrono::microseconds>(end
-                    - start).count()/1000
-            << " milliseconds" << std::endl;*/
-        auto start = std::chrono::steady_clock::now();
-        this->HarrisFilter(true);
-        auto end = std::chrono::steady_clock::now();
-        std::cout << "[*] Harris corner executed in "
-            <<
-            (float)std::chrono::duration_cast<std::chrono::microseconds>(end
-                    - start).count()/1000
-            << " milliseconds" << std::endl;
-        // STEP 2: for each level of the PoG
-        /*for (unsigned short i = 0; i < this->pog_levels; i++) {
-          std::vector<Keypoint> keypoints = this->HarrisFilter(
-          this->FAST(pyramid.scales.at(i)));
-          }*/
-    }
-
-    Frame ORBExtractor::GetAnnotatedFrame()
-    {
-        return *this->frame;
-    }
-
-    std::vector<Keypoint> ORBExtractor::GetKeypoints()
-    {
         return this->keypoints;
     }
 
-    void ORBExtractor::Describe()
+    Frame* FASTExtractor::GetAnnotatedFrame()
     {
-        /*
-         * 1. Apply BRIEF on the keypoints
-         */
+        assert(this->annotated_frame);
+        for (auto kp : keypoints) {
+            this->annotated_frame->WriteAt(kp.x, kp.y, 0);
+        }
+        return this->annotated_frame;
     }
 }

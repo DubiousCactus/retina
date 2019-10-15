@@ -59,14 +59,15 @@ namespace ARKIT
         public:
             Frame(uint8_t **data, int width, int height);
             Frame(int width, int height);
+            Frame(const Frame& f);
             ~Frame();
-            Pixel* PixelAt(unsigned int x, unsigned int y);
+            Pixel* PixelAt(unsigned int x, unsigned int y) const;
             uint8_t RawAt(unsigned int x, unsigned int y) const;
             void WriteAt(unsigned int x, unsigned int y, unsigned char val);
             int Width() const;
             int Height() const;
-            Matrix<int> GetIntMatrix();
-            Matrix<double> GetDoubleMatrix();
+            Matrix<int> GetIntMatrix() const;
+            Matrix<double> GetDoubleMatrix() const;
             Frame operator*(const Frame f) const;
     };
 }

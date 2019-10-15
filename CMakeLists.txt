@@ -52,8 +52,10 @@ find_package(Threads)
 add_executable(
   ${PROJECT_NAME}
   src/libArkit_Frame.cpp
-  src/libArkit_FeatureExtractor.cpp
   src/libArkit_StreamParser.cpp
+  src/libArkit_ORB.cpp
+  src/libArkit_Harris.cpp
+  src/libArkit_FAST.cpp
   src/main.cpp
 )
 

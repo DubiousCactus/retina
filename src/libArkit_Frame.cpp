@@ -26,12 +26,23 @@ namespace ARKIT
         this->height = height;
     }
 
+    Frame::Frame(const Frame& f)
+    {
+        this->data = new uint8_t*[f.height];
+        for (int i = 0; i < f.height; ++i) {
+            this->data[i] = new uint8_t[f.width];
+            for (int j = 0; j < f.width; ++j) {
+                this->data[i][j] = f.data[i][j];
+            }
+        }
+    }
+
     Frame::~Frame()
     {
         //delete this->data;
     }
 
-    Pixel* Frame::PixelAt(unsigned int x, unsigned int y)
+    Pixel* Frame::PixelAt(unsigned int x, unsigned int y) const
     {
         assert (x < this->width && y < this->height);
         // TODO: Use cache
@@ -50,7 +61,7 @@ namespace ARKIT
         this->data[y][x] = val;
     }
 
-    Matrix<int> Frame::GetIntMatrix()
+    Matrix<int> Frame::GetIntMatrix() const
     {
         Matrix<int> intMat(this->height, this->width);
         for (int i = 0; i < this->height; ++i) {
@@ -61,7 +72,7 @@ namespace ARKIT
         return intMat;
     }
 
-    Matrix<double> Frame::GetDoubleMatrix()
+    Matrix<double> Frame::GetDoubleMatrix() const
     {
         Matrix<double> intMat(this->height, this->width);
         for (int i = 0; i < this->height; ++i) {
