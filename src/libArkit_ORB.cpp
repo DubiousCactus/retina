@@ -47,8 +47,8 @@ namespace ARKIT
 
         assert(frame != nullptr);
         // STEP 1: Build the scale pyramid of the current frame
-        std::cout << "\t-> Building the pyramid" << std::endl;
-        ScalePyramid pyramid = this->BuildPyramid();
+        //std::cout << "\t-> Building the pyramid" << std::endl;
+        //ScalePyramid pyramid = this->BuildPyramid();
 
         auto start = std::chrono::steady_clock::now();
         this->fast_extractor->Extract(frame);

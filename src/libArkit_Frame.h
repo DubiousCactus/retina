@@ -67,7 +67,9 @@ namespace ARKIT
             int Width() const;
             int Height() const;
             Matrix<int> GetIntMatrix() const;
+            Matrix<int> GetIntMatrix(int x, int y, int patch_size) const;
             Matrix<double> GetDoubleMatrix() const;
+            Matrix<double> GetDoubleMatrix(int x, int y, int patch_size) const;
             Frame operator*(const Frame f) const;
     };
 }

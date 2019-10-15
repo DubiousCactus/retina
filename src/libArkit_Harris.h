@@ -23,10 +23,15 @@ namespace ARKIT
 
         public:
             HarrisExtractor(bool smoothing, bool non_max_suppression, bool annotate);
-            /* Order the FAST keypoints and return the N top points using the
-             * Harris corner measure
-             */
+            /* Extracts keypoints in image f using the Harris corner measure */
             std::vector<Keypoint> Extract(const Frame *f);
+            /* Computes the Harris corner response of pixel <x,y> in image f,
+             * within a patch of block_size*block_size
+             */
+            float MeasureCorner(const Frame *f, int x, int y, int block_size);
+            /* Returns an image as a copy of the extracted frame, with keypoint
+             * annotations.
+             */
             Frame* GetAnnotatedFrame();
     };
 }

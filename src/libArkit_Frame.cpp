@@ -72,15 +72,49 @@ namespace ARKIT
         return intMat;
     }
 
-    Matrix<double> Frame::GetDoubleMatrix() const
+    Matrix<int> Frame::GetIntMatrix(int x, int y, int patch_size) const
     {
-        Matrix<double> intMat(this->height, this->width);
-        for (int i = 0; i < this->height; ++i) {
-            for (int j = 0; j < this->width; ++j) {
-                *intMat.At(i, j) = (double)this->RawAt(j, i);
+        // TODO: Replace all assert() with exceptions!
+        int offset = patch_size/2;
+        assert(y-offset >= 0);
+        assert(x-offset >= 0);
+        assert(y+offset < this->height);
+        assert(x+offset < this->width);
+        Matrix<int> intMat(patch_size, patch_size);
+        for (int i = y-offset; i <= y+offset; ++i) {
+            for (int j = x-offset; j <= x+offset; ++j) {
+                *intMat.At(i, j) = (int)this->RawAt(j, i);
             }
         }
         return intMat;
+    }
+
+    Matrix<double> Frame::GetDoubleMatrix() const
+    {
+        Matrix<double> doubleMat(this->height, this->width);
+        for (int i = 0; i < this->height; ++i) {
+            for (int j = 0; j < this->width; ++j) {
+                *doubleMat.At(i, j) = (double)this->RawAt(j, i);
+            }
+        }
+        return doubleMat;
+    }
+
+    Matrix<double> Frame::GetDoubleMatrix(int x, int y, int patch_size) const
+    {
+        // TODO: Replace all assert() with exceptions!
+        int offset = patch_size/2;
+        assert(y-offset >= 0);
+        assert(x-offset >= 0);
+        assert(y+offset < this->height);
+        assert(x+offset < this->width);
+        Matrix<double> doubleMat(patch_size, patch_size);
+        for (int i = y-offset; i <= y+offset; ++i) {
+            for (int j = x-offset; j <= x+offset; ++j) {
+                *doubleMat.At(i, j) = (double)this->RawAt(j, i);
+            }
+        }
+        return doubleMat;
     }
 
     int Frame::Width() const

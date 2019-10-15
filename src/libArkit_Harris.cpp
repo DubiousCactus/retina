@@ -19,9 +19,7 @@ namespace ARKIT
         this->annotate = annotate;
     }
 
-    /* Order the FAST keypoints and return the N top points using the
-     * Harris corner measure
-     */
+    /* Extracts keypoints in image f using the Harris corner measure */
     std::vector<Keypoint> HarrisExtractor::Extract(const Frame *frame)
     {
         int offset = this->window_size / 2, nonMaxWindowSize = 6;
@@ -66,9 +64,7 @@ namespace ARKIT
             }
         }
         threshold /= img.Rows() * img.Cols();
-        std::cout << "Threshold: " << threshold << std::endl;
         threshold = abs(0.1*threshold); // TODO: Set class property
-        std::cout << "Damped threshold: " << threshold << std::endl;
 
         if (non_max_suppression) {
             offset = nonMaxWindowSize/2;
@@ -91,14 +87,57 @@ namespace ARKIT
                 if (*harrisResponse(i, j) > threshold && (i > 5 && i <
                             frame->Height()-5) && (j > 5 && j <
                             frame->Width()-5)) {
-                    this->keypoints.push_back(Keypoint(j, i));
+                    this->keypoints.push_back(Keypoint(j, i, *harrisResponse(i, j)));
                 }
             }
         }
-        std::cout << "[*]" << this->keypoints.size() << " IP found!" << std::endl;
+        std::cout << "[*] " << this->keypoints.size() << " keypoints found!" << std::endl;
         return this->keypoints;
     }
 
+    /* Computes the Harris corner response of pixel <x,y> in image f,
+     * within a patch of block_size*block_size
+     */
+    float HarrisExtractor::MeasureCorner(const Frame* f, int x, int y, int block_size)
+    {
+        // TODO: Optimize (don't use matrices you fool!)
+        //1. Extract a patch of blocksize*blocksize from the image f
+        Matrix<double> patch = f->GetDoubleMatrix(x, y, block_size);
+        //3. Compute the derivatives of the pixel within the patch
+        double Sxx, Syy, Sxy;
+        double det, trace, r, threshold;
+        double sX[3][3] = {
+            {-1, 0, 1},
+            {-2, 0, 2},
+            {-1, 0, 1}
+        };
+        double sY[3][3] = {
+            {-1, -2, -1},
+            {0, 0, 0},
+            {1, 2, 1}
+        };
+        Matrix<double> sobelX(sX);
+        Matrix<double> sobelY(sY);
+        Matrix<double> f_x = Matrix<double>::Convolve(patch, sobelX);
+        Matrix<double> f_y = Matrix<double>::Convolve(patch, sobelY);
+
+        Matrix<double> f_xx = Matrix<double>::ElementWiseProduct(f_x, f_x);
+        Matrix<double> f_xy = Matrix<double>::ElementWiseProduct(f_y, f_x);
+        Matrix<double> f_yy = Matrix<double>::ElementWiseProduct(f_y, f_y);
+
+        //4. Compute the Harris corner response
+        Sxx = Matrix<double>::Sum(f_xx, f_xx.Rows()/2, f_xx.Cols()/2, this->window_size);
+        Syy = Matrix<double>::Sum(f_yy, f_yy.Rows()/2, f_yy.Cols()/2, this->window_size);
+        Sxy = Matrix<double>::Sum(f_xy, f_xy.Rows()/2, f_xy.Cols()/2, this->window_size);
+        det = (Sxx * Syy) - pow(Sxy, 2);
+        trace = Sxx + Syy;
+
+        return det - this->sensitivity_factor * pow(trace, 2);
+    }
+
+    /* Returns an image as a copy of the extracted frame, with keypoint
+     * annotations.
+     */
     Frame* HarrisExtractor::GetAnnotatedFrame()
     {
         assert(this->annotated_frame);
