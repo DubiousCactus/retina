@@ -19,7 +19,7 @@ namespace ARKIT
             unsigned short window_size;
             float sensitivity_factor;
             bool smoothing;
-            bool non_max_suppression;
+            void NonMaxSuppression(int window_size, Matrix<double>& harrisResponse);
 
         public:
             HarrisExtractor(bool smoothing, bool non_max_suppression, bool annotate);

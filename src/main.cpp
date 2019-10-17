@@ -167,6 +167,7 @@ void video()
 
 int main() {
     desk();
+    lena();
 
     return 0;
 }

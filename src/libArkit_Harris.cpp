@@ -24,7 +24,7 @@ namespace ARKIT
     /* Extracts keypoints in image f using the Harris corner measure */
     std::vector<Keypoint> HarrisExtractor::Extract(const Frame *frame)
     {
-        int offset = this->window_size / 2, nonMaxWindowSize = 6;
+        int offset = this->window_size / 2;
         double Sxx, Syy, Sxy;
         double det, trace, r, threshold;
         double sX[3][3] = {
@@ -69,19 +69,7 @@ namespace ARKIT
         threshold = abs(0.1*threshold); // TODO: Set class property
 
         if (non_max_suppression) {
-            offset = nonMaxWindowSize/2;
-            for (int i = nonMaxWindowSize; i < harrisResponse.Rows() - nonMaxWindowSize; ++i) {
-                for (int j = nonMaxWindowSize; j < harrisResponse.Cols() - nonMaxWindowSize; ++j) {
-                    for (int k = -offset; k <= offset; ++k) {
-                        for (int l = -offset; l <= offset; ++l) {
-                            if (*harrisResponse(i+k, j+l) > *harrisResponse(i, j)) {
-                                *harrisResponse(i, j) = 0;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
+            this->NonMaxSuppression(6, harrisResponse);
         }
 
         for (int i = offset; i < img.Rows() - offset; ++i) {
@@ -97,6 +85,23 @@ namespace ARKIT
         return this->keypoints;
     }
 
+    void HarrisExtractor::NonMaxSuppression(int window_size, Matrix<double>& harrisResponse)
+    {
+        int offset = window_size/2;
+        for (int i = window_size; i < harrisResponse.Rows() - window_size; ++i) {
+            for (int j = window_size; j < harrisResponse.Cols() - window_size; ++j) {
+                for (int k = -offset; k <= offset; ++k) {
+                    for (int l = -offset; l <= offset; ++l) {
+                        if (*harrisResponse(i+k, j+l) > *harrisResponse(i, j)) {
+                            *harrisResponse(i, j) = 0;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     /* Computes the Harris corner response of pixel <x,y> in image f,
      * within a patch of block_size*block_size
      */
@@ -105,7 +110,7 @@ namespace ARKIT
         // TODO: Optimize (don't use matrices you fool!)
         //1. Extract a patch of blocksize*blocksize from the image f
         Matrix<double> patch = f->GetDoubleMatrix(x, y, block_size);
-        
+
         //3. Compute the derivatives of the pixel within the patch
         double Sxx, Syy, Sxy;
         double det, trace, r, threshold;
@@ -123,7 +128,7 @@ namespace ARKIT
         const Matrix<double> sobelY(sY);
         Matrix<double> f_x = Matrix<double>::Convolve(patch, sobelX);
         Matrix<double> f_y = Matrix<double>::Convolve(patch, sobelY);
-        
+
         Matrix<double> f_xx = Matrix<double>::ElementWiseProduct(f_x, f_x);
         Matrix<double> f_xy = Matrix<double>::ElementWiseProduct(f_y, f_x);
         Matrix<double> f_yy = Matrix<double>::ElementWiseProduct(f_y, f_y);

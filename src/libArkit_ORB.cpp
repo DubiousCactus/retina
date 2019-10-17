@@ -29,7 +29,7 @@ namespace ARKIT
     {
         this->n_keypoints = n_keypoints;
         this->pog_levels = 1;
-        this->fast_extractor = new FASTExtractor(3, 20, 12, 50, 150, false, true);
+        this->fast_extractor = new FASTExtractor(3, 20, 12, 150, false, true, true);
         this->harris_extractor = new HarrisExtractor(true, true, true);
     }
 
@@ -61,7 +61,7 @@ namespace ARKIT
                     - start).count()/1000
             << " milliseconds" << std::endl;
         start = std::chrono::steady_clock::now();
-        for (auto kp : this->keypoints) {
+        /*for (auto kp : this->keypoints) {
             if (kp.x - 3 < 0 || kp.x + 3 >= frame->Width() || kp.y - 3 < 0 ||
                     kp.y + 3 >= frame->Height()) {
                 continue;
@@ -76,8 +76,9 @@ namespace ARKIT
             << " milliseconds" << std::endl;
         std::cout << "\t-> Keeping the top " << this->n_keypoints << " keypoints..." << std::endl;
         std::sort(this->keypoints.begin(), this->keypoints.end());
-        assert(this->n_keypoints  <= this->keypoints.size());
-        this->keypoints.resize(this->n_keypoints);
+        if (this->n_keypoints <= this->keypoints.size()) {
+            this->keypoints.resize(this->n_keypoints);
+        }*/
         this->annotated_frame = new Frame(*frame);
         // STEP 2: for each level of the PoG
         /*for (unsigned short i = 0; i < this->pog_levels; i++) {

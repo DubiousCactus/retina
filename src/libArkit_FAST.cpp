@@ -11,17 +11,17 @@
 namespace ARKIT
 {
     FASTExtractor::FASTExtractor(unsigned short radius, unsigned short
-                    intensity_threshold, unsigned short contiguous_pixels,
-                    unsigned short top_n_keypoints, unsigned short n_keypoints,
-                    bool full_high_speed_test, bool annotate)
+            intensity_threshold, unsigned short contiguous_pixels, unsigned
+            short n_keypoints, bool full_high_speed_test, bool annotate, bool
+            non_max_suppression)
     {
         this->full_high_speed_test = full_high_speed_test;
         this->intensity_threshold = intensity_threshold;
         this->contiguous_pixels = contiguous_pixels;
-        this->top_n_keypoints = top_n_keypoints;
         this->n_keypoints = n_keypoints;
         this->radius = radius; // For a circle of 16 pixels
         this->annotate = annotate;
+        this->non_max_suppression = non_max_suppression;
     }
 
     /*
@@ -137,6 +137,7 @@ namespace ARKIT
      */
     std::vector<Keypoint> FASTExtractor::Extract(const Frame *f)
     {
+        // TODO: Implement the paper "Machine Learning a Corner Detector"
         std::cout << "\t-> Extracting keypoints (FAST)..." << std::endl;
         /*
          * 1. Select a pixel P in the image, with intensity I
@@ -149,16 +150,19 @@ namespace ARKIT
          *  darker than I - t. (n, or threshold, can be chosen to be 12)
          * 6. Non-maximal suppression (not in the case of ORB though)
          */
+        int Ip, upperBound, lowerBound, score;
+        bool allAbove, allBelow, corner, brighter, darker;
         this->annotated_frame = annotate ?  new Frame(*f) : NULL;
+        Matrix<int> fastResponse(f->Height(), f->Width());
         for (int y = this->radius; y < (f->Height() - this->radius); y++) {
             for (int x = this->radius; x < (f->Width() - this->radius); x++) {
-                int Ip = f->RawAt(x,y);
+                Ip = f->RawAt(x,y);
                 Pixel center(x, y);
                 center.intensity = Ip;
 
                 /* High-speed non-corner elimination */
-                int upperBound = Ip + this->intensity_threshold;
-                int lowerBound = Ip - this->intensity_threshold;
+                upperBound = Ip + this->intensity_threshold;
+                lowerBound = Ip - this->intensity_threshold;
                 if (this->contiguous_pixels == 12) {
                     if (this->full_high_speed_test) {
                         if ((f->RawAt(x,y-3) <= upperBound
@@ -180,7 +184,7 @@ namespace ARKIT
                         f->RawAt(x, y-3), f->RawAt(x, y+3),
                         f->RawAt(x-3, y), f->RawAt(x+3, y)
                     };
-                    bool allAbove = true, allBelow = true;
+                    allAbove = true, allBelow = true;
                     for (auto p = testPixels.begin(); p != testPixels.end(); p++) {
                         if (*p <= upperBound)
                             allAbove = false;
@@ -202,14 +206,14 @@ namespace ARKIT
                     else
                         return v.at(i);
                 };
-                bool corner = false;
+                corner = false;
                 for (unsigned int i = 0; i < (int)circle.size(); i++) {
                     std::vector<Pixel*> contiguousPixels;
                     contiguousPixels.reserve(this->contiguous_pixels);
                     for (unsigned int j = 0; j < this->contiguous_pixels; j++)
                         contiguousPixels.push_back(GetPixelWithOverflow(circle, i+j));
 
-                    bool brighter = true, darker = true;
+                    brighter = true, darker = true;
                     for (auto p = contiguousPixels.begin(); p !=
                             contiguousPixels.end(); p++) {
                         if ((*p)->intensity <= upperBound) {
@@ -238,14 +242,65 @@ namespace ARKIT
                 }
 
                 if (corner) {
-                    this->keypoints.push_back(Keypoint(x, y));
+                    // TODO: Optimize by including this computation in the above
+                    // loop
+                    score = 0;
+                    for (unsigned int i = 0; i < (int)circle.size(); ++i) {
+                        score += abs(Ip - circle.at(i)->intensity);
+                    }
+                    if (!non_max_suppression) {
+                        this->keypoints.push_back(Keypoint(x, y, score));
+                    } else {
+                        *fastResponse(y, x) = score;
+                    }
+                } else if (non_max_suppression) {
+                    *fastResponse(y, x) = 0;
                 }
             }
+        }
+
+        if (non_max_suppression) {
+            this->NonMaxSuppression(fastResponse);
         }
 
         std::cout<< "\t-> Found " << this->keypoints.size() << " keypoints" << std::endl;
 
         return this->keypoints;
+    }
+
+    void FASTExtractor::NonMaxSuppression(Matrix<int>& fastResponse)
+    {
+        std::vector<Keypoint> suppressed;
+        // TODO: Verify that this works as intended (no duplicates)
+        // I feel like it removes way too much...
+        for (int y = 1; y < fastResponse.Rows(); ++y) {
+            for (int x = 1; x < fastResponse.Cols(); ++x) {
+                if (*fastResponse(y, x) == 0)
+                    continue;
+                if (*fastResponse(y-1, x) != 0) {
+                    if (*fastResponse(y, x) > *fastResponse(y-1, x)) {
+                        *fastResponse(y-1, x) = 0;
+                    } else {
+                        *fastResponse(y, x) = 0;
+                    }
+                }
+                if (*fastResponse(y, x-1) != 0) {
+                    if (*fastResponse(y, x) > *fastResponse(y, x-1)) {
+                        *fastResponse(y, x-1) = 0;
+                    } else {
+                        *fastResponse(y, x) = 0;
+                    }
+                }
+            }
+        }
+        for (int y = 1; y < fastResponse.Rows(); ++y) {
+            for (int x = 1; x < fastResponse.Cols(); ++x) {
+                if (*fastResponse(y, x) > 0) {
+                    suppressed.push_back(Keypoint(x, y, *fastResponse(y, x)));
+                }
+            }
+        }
+        this->keypoints = suppressed;
     }
 
     Frame* FASTExtractor::GetAnnotatedFrame()

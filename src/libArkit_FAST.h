@@ -19,7 +19,6 @@ namespace ARKIT
             unsigned short radius;
             unsigned short intensity_threshold;
             unsigned short contiguous_pixels;
-            unsigned short top_n_keypoints;
             unsigned short n_keypoints;
 
             /*
@@ -27,12 +26,13 @@ namespace ARKIT
              */
             std::vector<Pixel*> BresenhamCircle(const Pixel center, int radius,
                     const Frame* frame);
+            void NonMaxSuppression(Matrix<int>& fastResponse);
 
         public:
             FASTExtractor(unsigned short radius, unsigned short
                     intensity_threshold, unsigned short contiguous_pixels,
-                    unsigned short top_n_keypoints, unsigned short n_keypoints,
-                    bool full_high_speed_test, bool annotate);
+                    unsigned short n_keypoints, bool full_high_speed_test, bool
+                    annotate, bool non_max_suppression);
 
             /* Extract N keypoints in the given frame, using the Features from
              * Accelerated Segment Test algorithm with a given circular radius

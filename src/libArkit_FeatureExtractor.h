@@ -66,6 +66,7 @@ namespace ARKIT
             std::vector<FeatureDescriptor> features;
             std::vector<Keypoint> keypoints;
             Frame *annotated_frame;
+            bool non_max_suppression;
             bool annotate;
 
         public:
