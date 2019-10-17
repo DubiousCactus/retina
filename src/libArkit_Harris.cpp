@@ -6,8 +6,10 @@
  */
 
 #include "libArkit_Harris.h"
+#include "../external/CImg.h"
 
 
+using namespace cimg_library;
 namespace ARKIT
 {
     HarrisExtractor::HarrisExtractor(bool smoothing, bool non_max_suppression, bool annotate)
@@ -103,6 +105,7 @@ namespace ARKIT
         // TODO: Optimize (don't use matrices you fool!)
         //1. Extract a patch of blocksize*blocksize from the image f
         Matrix<double> patch = f->GetDoubleMatrix(x, y, block_size);
+        
         //3. Compute the derivatives of the pixel within the patch
         double Sxx, Syy, Sxy;
         double det, trace, r, threshold;
@@ -116,11 +119,11 @@ namespace ARKIT
             {0, 0, 0},
             {1, 2, 1}
         };
-        Matrix<double> sobelX(sX);
-        Matrix<double> sobelY(sY);
+        const Matrix<double> sobelX(sX);
+        const Matrix<double> sobelY(sY);
         Matrix<double> f_x = Matrix<double>::Convolve(patch, sobelX);
         Matrix<double> f_y = Matrix<double>::Convolve(patch, sobelY);
-
+        
         Matrix<double> f_xx = Matrix<double>::ElementWiseProduct(f_x, f_x);
         Matrix<double> f_xy = Matrix<double>::ElementWiseProduct(f_y, f_x);
         Matrix<double> f_yy = Matrix<double>::ElementWiseProduct(f_y, f_y);
@@ -166,5 +169,10 @@ namespace ARKIT
             annotated_frame->WriteAt(kp.x, kp.y+1, 0);
         }
         return this->annotated_frame;
+    }
+
+    std::vector<Keypoint> HarrisExtractor::GetKeypoints()
+    {
+        return this->keypoints;
     }
 }

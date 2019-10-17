@@ -29,6 +29,13 @@ namespace ARKIT
         int y;
         float score;
 
+        Keypoint()
+        {
+            x = -1;
+            y = -1;
+            score = 0;
+        }
+
         Keypoint(int x, int y, float score)
         {
             this->x = x;
@@ -41,6 +48,11 @@ namespace ARKIT
             this->x = x;
             this->y = y;
             this->score = 0;
+        }
+
+        bool operator<(const Keypoint& kp) const
+        {
+            return score < kp.score;
         }
     };
 

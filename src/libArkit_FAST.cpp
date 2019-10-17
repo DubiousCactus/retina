@@ -238,9 +238,7 @@ namespace ARKIT
                 }
 
                 if (corner) {
-                    for (auto p = circle.begin(); p != circle.end(); p++) {
-                        this->keypoints.push_back(Keypoint((*p)->x, (*p)->y));
-                    }
+                    this->keypoints.push_back(Keypoint(x, y));
                 }
             }
         }

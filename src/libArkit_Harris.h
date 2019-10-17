@@ -33,6 +33,7 @@ namespace ARKIT
              * annotations.
              */
             Frame* GetAnnotatedFrame();
+            std::vector<Keypoint> GetKeypoints();
     };
 }
 

@@ -28,6 +28,8 @@ namespace ARKIT
 
     Frame::Frame(const Frame& f)
     {
+        this->width = f.width;
+        this->height = f.height;
         this->data = new uint8_t*[f.height];
         for (int i = 0; i < f.height; ++i) {
             this->data[i] = new uint8_t[f.width];
@@ -81,9 +83,9 @@ namespace ARKIT
         assert(y+offset < this->height);
         assert(x+offset < this->width);
         Matrix<int> intMat(patch_size, patch_size);
-        for (int i = y-offset; i <= y+offset; ++i) {
-            for (int j = x-offset; j <= x+offset; ++j) {
-                *intMat.At(i, j) = (int)this->RawAt(j, i);
+        for (int i = -offset; i < offset; ++i) {
+            for (int j = -offset; j < offset; ++j) {
+                *intMat.At(i+offset, j+offset) = (int)this->RawAt(x+i, y+j);
             }
         }
         return intMat;
@@ -109,9 +111,9 @@ namespace ARKIT
         assert(y+offset < this->height);
         assert(x+offset < this->width);
         Matrix<double> doubleMat(patch_size, patch_size);
-        for (int i = y-offset; i <= y+offset; ++i) {
-            for (int j = x-offset; j <= x+offset; ++j) {
-                *doubleMat.At(i, j) = (double)this->RawAt(j, i);
+        for (int i = -offset; i < offset; ++i) {
+            for (int j = -offset; j < offset; ++j) {
+                *doubleMat.At(i+offset, j+offset) = (double)this->RawAt(x+i, y+j);
             }
         }
         return doubleMat;

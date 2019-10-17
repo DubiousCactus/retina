@@ -54,7 +54,7 @@ namespace ARKIT
 		    static T Sum(const Matrix<T> &m, const int row, const int col, const int windowSize);
 			// Hadamard product of two matrices of the same size
 			static Matrix ElementWiseProduct(const Matrix &m1, const Matrix &m2);
-			static Matrix MakeGaussianKernel(const int radius);
+			static constexpr Matrix MakeGaussianKernel(const int radius);
     };
 
     template <class T>
@@ -102,18 +102,6 @@ namespace ARKIT
 		std::swap(rows, m.rows);
 		std::swap(cols, m.cols);
 		std::swap(data, m.data);
-		// TODO: Make exception safe with std::swap
-		/*if (this != &m) {
-			this->rows = m.rows;
-			this->cols = m.cols;
-			this->data = new T*[rows];
-			for (int i = 0; i < rows; ++i) {
-				this->data[i] = new T[cols];
-				for (int j = 0; j < cols; ++j) {
-					this->data[i][j] = m.data[i][j];
-				}
-			}
-		}*/
 		return *this;
 	}
 
@@ -136,64 +124,6 @@ namespace ARKIT
 		assert(n >= 0);
 		return &this->data[m][n];
 	}
-/*
-	template <class T>
-    Matrix<T> Matrix<T>::Convolve(Frame *f, Matrix<T> &m)
-    {
-		assert(m.Rows() == m.Cols()); // Only work with square ms
-		assert((m.Rows() % 2) != 0); // Only work with odd ms
-		int n2, m2;
-		int conv;
-		n2 = m.cols/2;
-		m2 = m.rows/2;
-		Matrix c(f->Height(), f->Width());
-		auto ZeroPaddedAccess = [](auto *frame, int i, int j) {
-			return (i < 0 || i >= frame->Width() || j < 0 || j >= frame->Height()) ? 0
-				: (int)frame->RawAt(i, j);
-		};
-		for (int i = 0; i < f->Height(); ++i) {
-			for (int j = 0; j < f->Width(); ++j) {
-				conv = 0;
-				for (int k = -n2; k <= n2; ++k) {
-					for (int l = -m2; l <= m2; ++l) {
-						conv += *m.At(k+n2, l+m2) * ZeroPaddedAccess(f, j-l, i-k);
-					}
-				}
-				*c.At(i, j) = conv;
-			}
-		}
-		[>for (int i = n2; i < m.Rows() - n2; ++i) {
-			for (int j = m2; j < m.Cols() - m2; ++j) {
-				conv = 0;
-				for (int l = -n2; l <= n2; ++l) {
-					for (int k = -m2; k <= m2; k++) {
-						conv += *kernel.At(k+m2, l+n2) * *m.At( i - k, j - l);
-					}
-				}
-				std::cout << conv << std::endl;
-				*c.At(j - m2, i - n2) = conv;
-			}
-		}<]
-		return c;
-[>
-		int n2, m2;
-		int conv;
-		n2 = m.cols/2;
-		m2 = m.rows/2;
-		Matrix c(f->Width(), f->Height());
-		for (int i = n2; i < f->Height() - n2; ++i) {
-			for (int j = m2; j < f->Width() - m2; ++j) {
-				conv = 0;
-				for (int l = -n2; l <= n2; ++l) {
-					for (int k = -m2; k <= m2; k++) {
-						conv += *m.At(k+m2, l+n2) * (int) f->RawAt(j - l, i - k);
-					}
-				}
-				*c.At(j - m2, i - n2) = conv;
-			}
-		}
-		return c;<]
-    }*/
 
 	template <class T>
     Matrix<T> Matrix<T>::Convolve(const Matrix<T> &m, const Matrix<T> &kernel)
@@ -220,23 +150,11 @@ namespace ARKIT
 				*c(i, j) = conv;
 			}
 		}
-		/*for (int i = n2; i < m.Rows() - n2; ++i) {
-			for (int j = m2; j < m.Cols() - m2; ++j) {
-				conv = 0;
-				for (int l = -n2; l <= n2; ++l) {
-					for (int k = -m2; k <= m2; k++) {
-						conv += *kernel.At(k+m2, l+n2) * *m.At( i - k, j - l);
-					}
-				}
-				std::cout << conv << std::endl;
-				*c.At(j - m2, i - n2) = conv;
-			}
-		}*/
 		return c;
     }
 
     template <class T>
-    Matrix<T> Matrix<T>::MakeGaussianKernel(const int radius)
+    constexpr Matrix<T> Matrix<T>::MakeGaussianKernel(const int radius)
 	{
 		assert((radius % 2) != 0); // Kernel must be odd in order to have a central element
 		Matrix<T> kernel(2*radius+1, 2*radius+1);
@@ -260,22 +178,6 @@ namespace ARKIT
 		}
 		return kernel;
 	}
-/*
-	template <class T>
-    T Matrix<T>::Sum(Matrix<T> &m, int xmin, int ymin, int xmax, int ymax)
-    {
-		int sum = 0;
-		auto ZeroPaddedAccess = [](auto &mat, int i, int j) {
-			return (i < 0 || i >= mat.Rows() || j < 0 || j >= mat.Cols()) ? 0
-				: *mat.At(i, j);
-		};
-		for (int i = xmin; i <= xmax; ++i) {
-			for (int j = ymin; j <= ymax; ++j) {
-				sum += ZeroPaddedAccess(m, j, i);
-			}
-		}
-		return sum;
-    }*/
 
 	template <class T>
     T Matrix<T>::Sum(const Matrix<T> &m, const int row, const int col, const int windowSize)

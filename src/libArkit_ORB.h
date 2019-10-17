@@ -17,6 +17,7 @@ namespace ARKIT
     class ORBExtractor: FeatureExtractor
     {
         private:
+            int n_keypoints;
             unsigned short pog_levels;
             /* Build a scale pyramid of the base image */
             ScalePyramid BuildPyramid();
@@ -25,7 +26,7 @@ namespace ARKIT
             HarrisExtractor* harris_extractor;
 
         public:
-            ORBExtractor();
+            ORBExtractor(int n_keypoints);
             ~ORBExtractor();
             std::vector<Keypoint> GetKeypoints();
             void Describe();
