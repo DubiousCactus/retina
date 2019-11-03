@@ -1,7 +1,7 @@
-cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 3.9)
 
 # projectname is the same as the main-executable
-project(ARKit)
+project(arlite VERSION 0.1 DESCRIPTION "An (almost) zero-dependency AR library")
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
@@ -15,8 +15,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_definitions('-std=c++17')
 
+list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+
 # Download and unpack googletest at configure time
-configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
+configure_file(cmake/CMakeLists.txt.in googletest-download/CMakeLists.txt)
 execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
   RESULT_VARIABLE result
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download )
@@ -49,17 +51,22 @@ endif()
 
 find_package(Threads)
 
-add_executable(
-  ${PROJECT_NAME}
+add_library(${PROJECT_NAME} SHARED
   src/libArkit_Frame.cpp
   src/libArkit_StreamParser.cpp
   src/libArkit_ORB.cpp
   src/libArkit_Harris.cpp
   src/libArkit_FAST.cpp
-  src/main.cpp
 )
 
+set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION}
+  PUBLIC_HEADER "include/libArkit_FeatureExtractor.h;include/${PROJECT_NAME}.h")
+
+configure_file(cmake/${PROJECT_NAME}.pc.in ${PROJECT_NAME}.pc @ONLY)
+target_include_directories(${PROJECT_NAME} PRIVATE .)
 target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
+
+include(GNUInstallDirs)
 
 set(YOU_NEED_X11 1)
 set(YOU_NEED_PNG 0)
@@ -100,12 +107,22 @@ if (FFMPEG_FOUND)
 endif(FFMPEG_FOUND)
 
 enable_testing()
-add_executable(ARKit_test test/Matrix_test.cpp)
-target_link_libraries(ARKit_test gtest_main)
-add_test(NAME ARKit_test COMMAND ARKit_test)
+add_executable(${PROJECT_NAME}_test test/Matrix_test.cpp)
+target_link_libraries(${PROJECT_NAME}_test gtest_main)
+add_test(NAME ${PROJECT_NAME}_test COMMAND ${PROJECT_NAME}_test)
 
-add_custom_target(${PROJECT_NAME}-symlink ALL ln --force -s
-  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}
-  ${CMAKE_SOURCE_DIR}/${PROJECT_NAME} DEPENDS ${PROJECT_NAME})
 set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES
   ${CMAKE_SOURCE_DIR}/${PROJECT_NAME})
+
+install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME}-config
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    #PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
+
+install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc DESTINATION
+  ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
+
+install(EXPORT ${PROJECT_NAME}-config DESTINATION share/${PROJECT_NAME}/cmake)
+
+export(TARGETS ${PROJECT_NAME} FILE ${PROJECT_NAME}-config.cmake)
