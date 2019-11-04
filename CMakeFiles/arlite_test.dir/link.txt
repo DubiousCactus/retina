@@ -1,1 +1,0 @@
-/usr/bin/g++  -D__STDC_CONSTANT_MACROS -g   CMakeFiles/arlite_test.dir/test/Matrix_test.cpp.o  -o arlite_test lib/libgtest_maind.a lib/libgtestd.a -lpthread 
