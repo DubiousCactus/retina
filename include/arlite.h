@@ -8,11 +8,11 @@
 #ifndef ARLITE_H
 #define ARLITE_H
 
-#include "libArkit_FeatureExtractor.h"
-#include "libArkit_ORB.h"
-#include "libArkit_Harris.h"
-#include "libArkit_StreamParser.h"
-#include "libArkit_FAST.h"
-#include "libArkit_Frame.h"
+#include "FeatureExtractor.h"
+#include "ORB.h"
+#include "Harris.h"
+#include "StreamParser.h"
+#include "FAST.h"
+#include "Frame.h"
 
 #endif /* !ARLITE_H */

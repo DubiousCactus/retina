@@ -6,10 +6,10 @@
  */
 
 #include <gtest/gtest.h>
-#include "../src/libArkit_Matrix.h"
+#include "../include/Matrix.h"
 
 TEST(Matrix, Creation) {
-    ARKIT::Matrix<int> m(4, 6);
+    arlib::Matrix<int> m(4, 6);
     ASSERT_EQ(m.Rows(), 4);
     ASSERT_EQ(m.Cols(), 6);
 
@@ -17,7 +17,7 @@ TEST(Matrix, Creation) {
         { 1.23, 5.22, 9.16 },
         { 7.88, 3.46, 8.54 }
     };
-    ARKIT::Matrix<float> m2(data);
+    arlib::Matrix<float> m2(data);
     ASSERT_EQ(m2.Rows(), 2);
     ASSERT_EQ(m2.Cols(), 3);
     for (int i = 0; i < 2; i++) {
@@ -33,7 +33,7 @@ TEST(Matrix, Creation) {
             data2[i][j] = 1.23456 + (i*j);
         }
     }
-    ARKIT::Matrix<double> m3(data2, 3, 4);
+    arlib::Matrix<double> m3(data2, 3, 4);
     ASSERT_EQ(m3.Rows(), 3);
     ASSERT_EQ(m3.Cols(), 4);
     for (int i = 0; i < 2; i++) {
@@ -54,7 +54,7 @@ TEST(Matrix, Transpose) {
         {2, 5},
         {3, 6}
     };
-    ARKIT::Matrix<int> m(data);
+    arlib::Matrix<int> m(data);
     auto transpose = m.Transposed();
     EXPECT_EQ(transpose.Rows(), m.Cols());
     EXPECT_EQ(transpose.Cols(), m.Rows());
@@ -78,7 +78,7 @@ TEST(Matrix, Transpose) {
         { 4, 0, 4, 10, -65 },
         { 5, 0, 5, 11, -44 }
     };
-    ARKIT::Matrix<long> m2(square);
+    arlib::Matrix<long> m2(square);
     auto t = m2.Transposed();
     EXPECT_EQ(t.Rows(), m2.Cols());
     EXPECT_EQ(t.Cols(), m2.Rows());
@@ -123,9 +123,9 @@ TEST(Matrix, Mul) {
         {48, 24},
         {66, 33}
     };
-    ARKIT::Matrix<int> m(data);
-    ARKIT::Matrix<int> o(op);
-    ARKIT::Matrix<int> r(res);
+    arlib::Matrix<int> m(data);
+    arlib::Matrix<int> o(op);
+    arlib::Matrix<int> r(res);
     auto mul = m * o.Transposed();
     EXPECT_EQ(mul.Rows(), r.Rows());
     EXPECT_EQ(mul.Cols(), r.Cols());
@@ -156,10 +156,10 @@ TEST(Matrix, Convolution) {
         { 86, 139, 106 },
         { 82, 108, 70 }
     };
-    ARKIT::Matrix<int> m(data);
-    ARKIT::Matrix<int> k(kernel);
-    ARKIT::Matrix<int> r(res);
-    auto conv2d = ARKIT::Matrix<int>::Convolve(m, k);
+    arlib::Matrix<int> m(data);
+    arlib::Matrix<int> k(kernel);
+    arlib::Matrix<int> r(res);
+    auto conv2d = arlib::Matrix<int>::Convolve(m, k);
     EXPECT_EQ(conv2d.Rows(), r.Rows());
     EXPECT_EQ(conv2d.Cols(), r.Cols());
     for (int i = 0; i < r.Rows(); i++) {

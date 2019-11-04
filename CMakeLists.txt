@@ -52,17 +52,18 @@ endif()
 find_package(Threads)
 
 add_library(${PROJECT_NAME} SHARED
-  src/libArkit_Frame.cpp
-  src/libArkit_StreamParser.cpp
-  src/libArkit_ORB.cpp
-  src/libArkit_Harris.cpp
-  src/libArkit_FAST.cpp
+  src/Frame.cpp
+  src/StreamParser.cpp
+  src/ORB.cpp
+  src/Harris.cpp
+  src/FAST.cpp
 )
 
 #set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION}
   #PUBLIC_HEADER include/${PROJECT_NAME}.h)
 
 configure_file(cmake/${PROJECT_NAME}.pc.in ${PROJECT_NAME}.pc @ONLY)
+target_include_directories(${PROJECT_NAME} PRIVATE include)
 target_include_directories(${PROJECT_NAME} PRIVATE .)
 target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
 

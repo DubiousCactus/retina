@@ -28,11 +28,11 @@ void lena()
         }
     }
 
-    ARKIT::Frame* frame1 = new ARKIT::Frame(data, image.width(), image.height());
+    arlib::Frame* frame1 = new arlib::Frame(data, image.width(), image.height());
     std::cout << "[*] Extracting features..." << std::endl;
-    ARKIT::ORBExtractor extractor(500);
+    arlib::ORBExtractor extractor(500);
     extractor.Extract(frame1);
-    std::vector<ARKIT::Keypoint> keypoints = extractor.GetKeypoints();
+    std::vector<arlib::Keypoint> keypoints = extractor.GetKeypoints();
     std::cout << "[*] Keypoints extracted: " << keypoints.size() << std::endl;
 
     for (auto kp : keypoints) {
@@ -126,11 +126,11 @@ void desk()
         }
     }
 
-    ARKIT::Frame* frame1 = new ARKIT::Frame(data, image.width(), image.height());
+    arlib::Frame* frame1 = new arlib::Frame(data, image.width(), image.height());
     std::cout << "[*] Extracting features..." << std::endl;
-    ARKIT::ORBExtractor extractor(500);
+    arlib::ORBExtractor extractor(500);
     extractor.Extract(frame1);
-    std::vector<ARKIT::Keypoint> keypoints = extractor.GetKeypoints();
+    std::vector<arlib::Keypoint> keypoints = extractor.GetKeypoints();
     std::cout << "[*] Keypoints extracted: " << keypoints.size() << std::endl;
 
     for (auto kp : keypoints) {
@@ -226,14 +226,14 @@ void squares()
         }
     }
 
-    ARKIT::Frame* frame1 = new ARKIT::Frame(data, image.width(), image.height());
+    arlib::Frame* frame1 = new arlib::Frame(data, image.width(), image.height());
     std::cout << "[*] Extracting features..." << std::endl;
-    ARKIT::ORBExtractor extractor(500);
+    arlib::ORBExtractor extractor(500);
     extractor.Extract(frame1);
-    std::vector<ARKIT::Keypoint> keypoints = extractor.GetKeypoints();
+    std::vector<arlib::Keypoint> keypoints = extractor.GetKeypoints();
     std::cout << "[*] Keypoints extracted: " << keypoints.size() << std::endl;
 
-    ARKIT::Frame* annotated = extractor.GetAnnotatedFrame();
+    arlib::Frame* annotated = extractor.GetAnnotatedFrame();
     CImg<uint8_t> annotatedImage(annotated->Width(), annotated->Height(), 1, 1, 0);
 
     for (int y = 0; y < annotated->Height(); y++)
@@ -250,31 +250,31 @@ void squares()
 
 void video()
 {
-    ARKIT::StreamParser streamParser("desk.mpeg");
+    arlib::StreamParser streamParser("desk.mpeg");
     std::cout << "[*] Extracting features..." << std::endl;
-    ARKIT::Frame *f = NULL;
+    arlib::Frame *f = NULL;
     int i = 0;
     while(i++ < 10)
         f = streamParser.NextFrame();
-    ARKIT::ORBExtractor extractor(500);
+    arlib::ORBExtractor extractor(500);
     extractor.Extract(f);
     /*do {
         std::cout << "Frame no " << i++ << std::endl;
         f = streamParser.NextFrame();
         if (!f)
             break;
-        ARKIT::ORBExtractor extractor(*f);
+        arlib::ORBExtractor extractor(*f);
         extractor.Extract();
     } while (f);
-    //ARKIT::Frame *f = streamParser.NextFrame();
+    //arlib::Frame *f = streamParser.NextFrame();
     if (!f) {
         std::cerr << "Empty frame!" << std::endl;
         exit(1);
     }*/
-    std::vector<ARKIT::Keypoint> keypoints = extractor.GetKeypoints();
+    std::vector<arlib::Keypoint> keypoints = extractor.GetKeypoints();
     std::cout << "[*] Keypoints extracted: " << keypoints.size() << std::endl;
 
-    ARKIT::Frame* annotated = extractor.GetAnnotatedFrame();
+    arlib::Frame* annotated = extractor.GetAnnotatedFrame();
     CImg<uint8_t> annotatedImage(annotated->Width(), annotated->Height(), 1, 1, 0);
 
     for (int y = 0; y < annotated->Height(); y++)
