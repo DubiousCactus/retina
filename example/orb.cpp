@@ -215,7 +215,7 @@ void desk()
 
 void squares()
 {
-    CImg<uint8_t> image("squares2.jpg");
+    CImg<uint8_t> image("squares.jpg");
 
     uint8_t **data = new uint8_t *[image.height()];
     for (int y = 0; y < image.height(); y++) {
@@ -290,7 +290,7 @@ void video()
 
 int main() {
     desk();
-    lena();
+    //lena();
 
     return 0;
 }

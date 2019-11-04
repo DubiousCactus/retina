@@ -6,7 +6,7 @@ project(orb)
 add_definitions('-g')
 add_definitions('-Wall')
 add_definitions('-std=c++17')
-add_definitions('-O3')
+#add_definitions('-O3')
 
 find_package(arlite REQUIRED)
 

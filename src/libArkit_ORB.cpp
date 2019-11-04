@@ -9,7 +9,6 @@
 
 #include <cmath>
 #include <algorithm>
-#include "../external/CImg.h"
 
 namespace ARKIT
 {
@@ -25,18 +24,12 @@ namespace ARKIT
 
     float IntensityCentroid();
 
-    ORBExtractor::ORBExtractor(int n_keypoints)
+    ORBExtractor::ORBExtractor(size_t n_keypoints)
+        : fast_extractor(3, 20, 12, 150, false, true, false),
+        harris_extractor(true, true, true)
     {
         this->n_keypoints = n_keypoints;
         this->pog_levels = 1;
-        this->fast_extractor = new FASTExtractor(3, 20, 12, 150, false, true, false);
-        this->harris_extractor = new HarrisExtractor(true, true, true);
-    }
-
-    ORBExtractor::~ORBExtractor()
-    {
-        delete this->fast_extractor;
-        delete this->harris_extractor;
     }
 
     std::vector<Keypoint> ORBExtractor::Extract(const Frame *frame)
@@ -53,7 +46,7 @@ namespace ARKIT
         //ScalePyramid pyramid = this->BuildPyramid();
 
         auto start = std::chrono::steady_clock::now();
-        this->keypoints = this->fast_extractor->Extract(frame);
+        this->keypoints = this->fast_extractor.Extract(frame);
         auto end = std::chrono::steady_clock::now();
         std::cout << "\t-> FAST executed in "
             <<
@@ -66,7 +59,7 @@ namespace ARKIT
                     kp.y + 3 >= frame->Height()) {
                 continue;
             }
-            kp.score = this->harris_extractor->MeasureCorner(frame, kp.x, kp.y, 7);
+            kp.score = this->harris_extractor.MeasureCorner(frame, kp.x, kp.y, 7);
         }
         end = std::chrono::steady_clock::now();
         std::cout << "\t-> Harris corner measure (for all keypoints) executed in "

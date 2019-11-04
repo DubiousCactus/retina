@@ -6,10 +6,7 @@
  */
 
 #include "libArkit_Harris.h"
-#include "../external/CImg.h"
 
-
-using namespace cimg_library;
 namespace ARKIT
 {
     HarrisExtractor::HarrisExtractor(bool smoothing, bool non_max_suppression, bool annotate)

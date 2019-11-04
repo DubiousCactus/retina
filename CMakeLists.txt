@@ -59,8 +59,8 @@ add_library(${PROJECT_NAME} SHARED
   src/libArkit_FAST.cpp
 )
 
-set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION}
-  PUBLIC_HEADER "include/libArkit_FeatureExtractor.h;include/${PROJECT_NAME}.h")
+#set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION}
+  #PUBLIC_HEADER include/${PROJECT_NAME}.h)
 
 configure_file(cmake/${PROJECT_NAME}.pc.in ${PROJECT_NAME}.pc @ONLY)
 target_include_directories(${PROJECT_NAME} PRIVATE .)
