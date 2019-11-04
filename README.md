@@ -1,9 +1,12 @@
-# Standalone AR Kit for learning purposes, with minimal dependencies
+# Standalone AR framework for learning purposes, with minimal dependencies
 
 # TODO
 
-[ ] Feature extraction library
-[ ] Target surface recognition
-[ ] Homography estimation
-[ ] Derive projection
-[ ] Model projection
+- [ ] Feature extraction library <--
+        - [x] FAST
+        - [x] Harris
+        - [ ] ORB
+- [ ] Target surface recognition
+- [ ] Homography estimation
+- [ ] Derive projection
+- [ ] Model projection
