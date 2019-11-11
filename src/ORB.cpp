@@ -8,6 +8,7 @@
 #include "ORB.h"
 
 #include <cmath>
+#include <random>
 #include <algorithm>
 
 namespace arlib
@@ -72,6 +73,7 @@ namespace arlib
         if (this->n_keypoints <= this->keypoints.size()) {
             this->keypoints.resize(this->n_keypoints);
         }
+        this->Describe(frame);
         this->annotated_frame = new Frame(*frame);
         // STEP 2: for each level of the PoG
         /*for (unsigned short i = 0; i < this->pog_levels; i++) {
@@ -120,10 +122,86 @@ namespace arlib
         return this->keypoints;
     }
 
-    void ORBExtractor::Describe()
+    void ORBExtractor::Describe(const Frame *frame)
     {
         /*
          * 1. Apply BRIEF on the keypoints
+         * See: https://medium.com/software-incubator/introduction-to-brief-binary-robust-independent-elementary-features-436f4a31a0e6
+         * TODO: Maybe move to a BRIEF class?
          */
+        const int patch_size = 5;
+        const int length = 128;
+        const auto samplingGeometry = GAUSSIAN_I;
+        std::default_random_engine generator;
+        Pixel x1(0), x2(0);
+        // TODO: Is it faster to convolve each patch individually?
+        Matrix<double> gaussianKernel = Matrix<double>::MakeGaussianKernel(5);
+        //Matrix<double> img = Matrix<double>::Convolve(frame->GetDoubleMatrix(), gaussianKernel);
+
+        for (auto kp : this->keypoints) {
+            Matrix<double> patch =
+                Matrix<double>::Convolve(frame->GetDoubleMatrix(kp.x, kp.y,
+                            patch_size), gaussianKernel);
+            std::string featureVector(length, '0');
+            for (auto &b : featureVector) {
+                // TODO: Use a if-constexpr ?
+                switch (samplingGeometry) {
+                    case UNIFORM:
+                        {
+                            const int spread = patch_size / 2;
+                            std::uniform_int_distribution<int>
+                                distribution_x(kp.x-spread, kp.x+spread);
+                            std::uniform_int_distribution<int>
+                                distribution_y(kp.y-spread, kp.y+spread);
+                            x1.x = distribution_x(generator);
+                            x1.y = distribution_y(generator);
+                            x2.x = distribution_x(generator);
+                            x2.y = distribution_y(generator);
+                        }
+                        break;
+                    case GAUSSIAN_I:
+                        {
+                            const int spread = 0.04 * (patch_size * patch_size);
+                            std::normal_distribution<double> distribution_x(kp.x, spread);
+                            std::normal_distribution<double> distribution_y(kp.y, spread);
+                            x1.x = (int)distribution_x(generator);
+                            x1.y = (int)distribution_y(generator);
+                            x2.x = (int)distribution_x(generator);
+                            x2.y = (int)distribution_y(generator);
+                            std::cout << "x1: " << x1.x << "," << x1.y << std::endl;
+                            std::cout << "x2: " << x2.x << "," << x2.y << std::endl;
+                        }
+                        break;
+                    case GAUSSIAN_II:
+                        {
+                            const int spread = 0.04 * (patch_size * patch_size);
+                            std::normal_distribution<double> distribution_x1_x(kp.x, spread);
+                            std::normal_distribution<double> distribution_x1_y(kp.y, spread);
+                            x1.x = (int)distribution_x1_x(generator);
+                            x1.y = (int)distribution_x1_y(generator);
+                            std::normal_distribution<double> distribution_x2_x(kp.x, spread);
+                            std::normal_distribution<double> distribution_x2_y(kp.y, spread);
+                            x2.x = std::clamp((int)distribution_x2_x(generator),
+                                    kp.x-patch_size/2, kp.x+patch_size/2);
+                            x2.y = std::clamp((int)distribution_x2_y(generator),
+                                    kp.y-patch_size/2, kp.y+patch_size/2);
+                        }
+                        break;
+                    case COARSE_POLAR_GRID_I:
+                        // Both x and y pixels in the random pair are sampled
+                        // from discrete locations of a coarse polar grid
+                        // introducing a spatial quantization.
+                        break;
+                    case COARSE_POLAR_GRID_II:
+                        // Pick x at (0, 0) (which is kp) and y from discrete
+                        // locations of a coarse polar grid.
+                        break;
+                    default:
+                        x1.intensity = x2.intensity = 0;
+                }
+                b = patch(x1.x, x1.y) < patch(x2.x, x2.y) ? '1' : '0';
+                break;
+            }
+        }
     }
 }

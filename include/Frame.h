@@ -44,6 +44,11 @@ namespace arlib
         {
             return (p->x == this->x) && (p->y == this->y);
         }
+
+        bool operator<(const Pixel &p) const
+        {
+            return this->intensity < p.intensity;
+        }
     };
 
     class Frame

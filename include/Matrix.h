@@ -48,7 +48,7 @@ namespace arlib {
         int Rows() const;
         int Cols() const;
         /* Returns the central part of the convolution
-that is the same size as A.*/
+           that is the same size as A.*/
         static Matrix Convolve(const Matrix &m, const Matrix &kernel);
         static T Sum(const Matrix<T> &m, const int row, const int col, const int windowSize);
         // Hadamard product of two matrices of the same size
@@ -210,12 +210,6 @@ that is the same size as A.*/
         }
         return mul;
     }
-
-    /*template <class T>
-     *T Matrix<T>::operator()(int row, int col)
-    {
-            return this->At(row, col);
-    }*/
 
     template <class T>
     Matrix<T> Matrix<T>::Transposed() const {

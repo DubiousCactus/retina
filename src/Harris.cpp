@@ -107,6 +107,7 @@ namespace arlib
         // TODO: Optimize (don't use matrices you fool!)
         //1. Extract a patch of blocksize*blocksize from the image f
         Matrix<double> patch = f->GetDoubleMatrix(x, y, block_size);
+        // TODO: Maybe smoothen the patch??
 
         //3. Compute the derivatives of the pixel within the patch
         double Sxx, Syy, Sxy;

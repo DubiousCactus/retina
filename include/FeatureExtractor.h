@@ -18,7 +18,7 @@
 
 namespace arlib
 {
-    
+
     struct FeatureDescriptor {
         int x;
         int y;
