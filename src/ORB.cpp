@@ -129,19 +129,23 @@ namespace arlib
          * See: https://medium.com/software-incubator/introduction-to-brief-binary-robust-independent-elementary-features-436f4a31a0e6
          * TODO: Maybe move to a BRIEF class?
          */
-        const int patch_size = 5;
+        const int patch_size = 15;
         const int length = 128;
         const auto samplingGeometry = GAUSSIAN_I;
         std::default_random_engine generator;
         Pixel x1(0), x2(0);
         // TODO: Is it faster to convolve each patch individually?
         Matrix<double> gaussianKernel = Matrix<double>::MakeGaussianKernel(5);
+        Matrix<double> img = Matrix<double>::Convolve(frame->GetDoubleMatrix(),
+                gaussianKernel);
         //Matrix<double> img = Matrix<double>::Convolve(frame->GetDoubleMatrix(), gaussianKernel);
 
         for (auto kp : this->keypoints) {
-            Matrix<double> patch =
-                Matrix<double>::Convolve(frame->GetDoubleMatrix(kp.x, kp.y,
-                            patch_size), gaussianKernel);
+            if (((kp.x - patch_size) < 0) || ((kp.y - patch_size) < 0)
+                    || ((kp.x + patch_size) >= frame->Width())
+                    || ((kp.y + patch_size) >= frame->Height())) {
+                continue;
+            }
             std::string featureVector(length, '0');
             for (auto &b : featureVector) {
                 // TODO: Use a if-constexpr ?
@@ -161,20 +165,18 @@ namespace arlib
                         break;
                     case GAUSSIAN_I:
                         {
-                            const int spread = 0.04 * (patch_size * patch_size);
+                            const double spread = 0.04 * (patch_size * patch_size);
                             std::normal_distribution<double> distribution_x(kp.x, spread);
                             std::normal_distribution<double> distribution_y(kp.y, spread);
                             x1.x = (int)distribution_x(generator);
                             x1.y = (int)distribution_y(generator);
                             x2.x = (int)distribution_x(generator);
                             x2.y = (int)distribution_y(generator);
-                            std::cout << "x1: " << x1.x << "," << x1.y << std::endl;
-                            std::cout << "x2: " << x2.x << "," << x2.y << std::endl;
                         }
                         break;
                     case GAUSSIAN_II:
                         {
-                            const int spread = 0.04 * (patch_size * patch_size);
+                            const double spread = 0.04 * (patch_size * patch_size);
                             std::normal_distribution<double> distribution_x1_x(kp.x, spread);
                             std::normal_distribution<double> distribution_x1_y(kp.y, spread);
                             x1.x = (int)distribution_x1_x(generator);
@@ -199,9 +201,9 @@ namespace arlib
                     default:
                         x1.intensity = x2.intensity = 0;
                 }
-                b = patch(x1.x, x1.y) < patch(x2.x, x2.y) ? '1' : '0';
-                break;
+                b = img(x1.x, x1.y) < img(x2.x, x2.y) ? '1' : '0';
             }
+            std::cout << featureVector << std::endl;
         }
     }
 }
