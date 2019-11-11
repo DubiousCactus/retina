@@ -141,9 +141,9 @@ namespace arlib
         //Matrix<double> img = Matrix<double>::Convolve(frame->GetDoubleMatrix(), gaussianKernel);
 
         for (auto kp : this->keypoints) {
-            if (((kp.x - patch_size) < 0) || ((kp.y - patch_size) < 0)
-                    || ((kp.x + patch_size) >= frame->Width())
-                    || ((kp.y + patch_size) >= frame->Height())) {
+            if (((kp.x - patch_size/2) < 0) || ((kp.y - patch_size/2) < 0)
+                    || ((kp.x + patch_size/2) >= img.Cols())
+                    || ((kp.y + patch_size/2) >= img.Rows())) {
                 continue;
             }
             std::string featureVector(length, '0');
@@ -165,13 +165,19 @@ namespace arlib
                         break;
                     case GAUSSIAN_I:
                         {
-                            const double spread = 0.04 * (patch_size * patch_size);
+                            //const double spread = 0.04 * (patch_size * patch_size);
+                            //const double spread = ((kp.x+patch_size/2)-(kp.x+patch_size/2))/4;
+                            const double spread = patch_size/4;
                             std::normal_distribution<double> distribution_x(kp.x, spread);
                             std::normal_distribution<double> distribution_y(kp.y, spread);
-                            x1.x = (int)distribution_x(generator);
-                            x1.y = (int)distribution_y(generator);
-                            x2.x = (int)distribution_x(generator);
-                            x2.y = (int)distribution_y(generator);
+                            x1.x = std::clamp((int)distribution_x(generator),
+                                    kp.x-patch_size/2, kp.x+patch_size/2);
+                            x1.y = std::clamp((int)distribution_y(generator),
+                                    kp.y-patch_size/2, kp.y+patch_size/2);
+                            x2.x = std::clamp((int)distribution_x(generator),
+                                    kp.x-patch_size/2, kp.x+patch_size/2);
+                            x2.y = std::clamp((int)distribution_y(generator),
+                                    kp.y-patch_size/2, kp.y+patch_size/2);
                         }
                         break;
                     case GAUSSIAN_II:
@@ -201,7 +207,7 @@ namespace arlib
                     default:
                         x1.intensity = x2.intensity = 0;
                 }
-                b = img(x1.x, x1.y) < img(x2.x, x2.y) ? '1' : '0';
+                b = img(x1.y, x1.x) < img(x2.y, x2.x) ? '1' : '0';
             }
             std::cout << featureVector << std::endl;
         }
