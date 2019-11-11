@@ -73,7 +73,14 @@ namespace arlib
         if (this->n_keypoints <= this->keypoints.size()) {
             this->keypoints.resize(this->n_keypoints);
         }
+        start = std::chrono::steady_clock::now();
         this->Describe(frame);
+        end = std::chrono::steady_clock::now();
+        std::cout << "\t-> BRIEF descriptors computed in "
+            <<
+            (float)std::chrono::duration_cast<std::chrono::microseconds>(end
+                    - start).count()/1000
+            << " milliseconds" << std::endl;
         this->annotated_frame = new Frame(*frame);
         // STEP 2: for each level of the PoG
         /*for (unsigned short i = 0; i < this->pog_levels; i++) {
@@ -209,7 +216,8 @@ namespace arlib
                 }
                 b = img(x1.y, x1.x) < img(x2.y, x2.x) ? '1' : '0';
             }
-            std::cout << featureVector << std::endl;
+            //std::cout << featureVector << std::endl;
+            this->features.push_back(FeatureDescriptor(kp.x, kp.y, featureVector)); 
         }
     }
 }

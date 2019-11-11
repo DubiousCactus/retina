@@ -22,6 +22,14 @@ namespace arlib
     struct FeatureDescriptor {
         int x;
         int y;
+        std::string binary_descriptor;
+
+        FeatureDescriptor(int x, int y, std::string descriptor)
+        {
+            this->x = x;
+            this->y = y;
+            this->binary_descriptor = descriptor;
+        }
     };
 
     struct Keypoint {
