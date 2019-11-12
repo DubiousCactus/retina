@@ -145,7 +145,6 @@ namespace arlib
         Matrix<double> gaussianKernel = Matrix<double>::MakeGaussianKernel(5);
         Matrix<double> img = Matrix<double>::Convolve(frame->GetDoubleMatrix(),
                 gaussianKernel);
-        //Matrix<double> img = Matrix<double>::Convolve(frame->GetDoubleMatrix(), gaussianKernel);
 
         for (auto kp : this->keypoints) {
             if (((kp.x - patch_size/2) < 0) || ((kp.y - patch_size/2) < 0)
@@ -172,9 +171,9 @@ namespace arlib
                         break;
                     case GAUSSIAN_I:
                         {
-                            //const double spread = 0.04 * (patch_size * patch_size);
+                            const double spread = 0.04 * (patch_size * patch_size);
                             //const double spread = ((kp.x+patch_size/2)-(kp.x+patch_size/2))/4;
-                            const double spread = patch_size/4;
+                            //const double spread = patch_size/4;
                             std::normal_distribution<double> distribution_x(kp.x, spread);
                             std::normal_distribution<double> distribution_y(kp.y, spread);
                             x1.x = std::clamp((int)distribution_x(generator),
@@ -216,7 +215,6 @@ namespace arlib
                 }
                 b = img(x1.y, x1.x) < img(x2.y, x2.x) ? '1' : '0';
             }
-            //std::cout << featureVector << std::endl;
             this->features.push_back(FeatureDescriptor(kp.x, kp.y, featureVector)); 
         }
     }
