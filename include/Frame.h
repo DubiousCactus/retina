@@ -13,7 +13,7 @@
 #include <iostream>
 #include "Matrix.h"
 
-namespace arlib
+namespace arlite
 {
     /* TODO: Remove the Pixel structure, it's garbage */
     struct Pixel {

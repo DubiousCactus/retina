@@ -8,7 +8,7 @@
 #include "FAST.h"
 
 
-namespace arlib
+namespace arlite
 {
     FASTExtractor::FASTExtractor(unsigned int margin, unsigned short radius,
             unsigned short intensity_threshold, unsigned short

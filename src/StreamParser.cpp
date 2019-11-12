@@ -7,7 +7,7 @@
 
 #include "StreamParser.h"
 
-namespace arlib
+namespace arlite
 {
     uint8_t* StreamParser::GetRGBPixel(int x, int y)
     {

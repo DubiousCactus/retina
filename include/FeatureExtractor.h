@@ -16,7 +16,7 @@
 
 #include "Frame.h"
 
-namespace arlib
+namespace arlite
 {
 
     struct FeatureDescriptor {

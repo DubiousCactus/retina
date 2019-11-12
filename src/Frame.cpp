@@ -7,7 +7,7 @@
 
 #include "Frame.h"
 
-namespace arlib
+namespace arlite
 {
     Frame::Frame(uint8_t **data, int width, int height)
     {

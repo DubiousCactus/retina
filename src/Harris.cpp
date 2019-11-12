@@ -7,7 +7,7 @@
 
 #include "Harris.h"
 
-namespace arlib
+namespace arlite
 {
     HarrisExtractor::HarrisExtractor(bool smoothing, bool non_max_suppression, bool annotate)
     {

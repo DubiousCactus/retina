@@ -11,17 +11,10 @@
 #include "FeatureExtractor.h"
 #include "Harris.h"
 #include "FAST.h"
+#include "BRIEF.h"
 
-namespace arlib
+namespace arlite
 {
-    enum SamplingGeometries {
-        UNIFORM,
-        GAUSSIAN_I,
-        GAUSSIAN_II,
-        COARSE_POLAR_GRID_I,
-        COARSE_POLAR_GRID_II
-    };
-
     class ORBExtractor: FeatureExtractor
     {
         private:
@@ -32,7 +25,7 @@ namespace arlib
             float IntensityCentroid();
             FASTExtractor fast_extractor;
             HarrisExtractor harris_extractor;
-            void Describe(const Frame *frame);
+            BRIEFDescriptor brief_descriptor;
 
         public:
             ORBExtractor(size_t n_keypoints);

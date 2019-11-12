@@ -57,6 +57,7 @@ add_library(${PROJECT_NAME} SHARED
   src/ORB.cpp
   src/Harris.cpp
   src/FAST.cpp
+  src/BRIEF.cpp
 )
 
 #set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION}

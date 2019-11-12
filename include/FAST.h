@@ -10,7 +10,7 @@
 
 #include "FeatureExtractor.h"
 
-namespace arlib
+namespace arlite
 {
     class FASTExtractor: FeatureExtractor
     {

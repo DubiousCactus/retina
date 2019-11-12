@@ -11,7 +11,7 @@
 #include "Frame.h"
 #include "FeatureExtractor.h"
 
-namespace arlib
+namespace arlite
 {
     class HarrisExtractor: FeatureExtractor
     {

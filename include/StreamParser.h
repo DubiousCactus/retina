@@ -23,7 +23,7 @@ extern "C"
 
 #define INBUF_SIZE 4096
 
-namespace arlib
+namespace arlite
 {
     class StreamParser
     {

@@ -11,9 +11,11 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <cassert>
+#include <iostream>
 
-namespace arlib {
-
+namespace arlite
+{
     template <class T>
     class Matrix {
         private:
