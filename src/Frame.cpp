@@ -85,7 +85,7 @@ namespace arlib
         Matrix<int> intMat(patch_size, patch_size);
         for (int i = -offset; i < offset; ++i) {
             for (int j = -offset; j < offset; ++j) {
-                *intMat.At(i+offset, j+offset) = (int)this->RawAt(x+i, y+j);
+                *intMat.At(i+offset, j+offset) = (int)this->data[y+j][x+i];
             }
         }
         return intMat;
@@ -96,7 +96,7 @@ namespace arlib
         Matrix<double> doubleMat(this->height, this->width);
         for (int i = 0; i < this->height; ++i) {
             for (int j = 0; j < this->width; ++j) {
-                *doubleMat.At(i, j) = (double)this->RawAt(j, i);
+                *doubleMat.At(i, j) = (double)this->data[i][j];
             }
         }
         return doubleMat;
@@ -113,7 +113,7 @@ namespace arlib
         Matrix<double> doubleMat(patch_size, patch_size);
         for (int i = -offset; i < offset; ++i) {
             for (int j = -offset; j < offset; ++j) {
-                *doubleMat.At(i+offset, j+offset) = (double)this->RawAt(x+i, y+j);
+                *doubleMat.At(i+offset, j+offset) = (double)this->data[y+j][x+i];
             }
         }
         return doubleMat;

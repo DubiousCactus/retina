@@ -26,7 +26,7 @@ namespace arlib
     float IntensityCentroid();
 
     ORBExtractor::ORBExtractor(size_t n_keypoints)
-        : fast_extractor(3, 20, 12, 150, false, true, false),
+        : fast_extractor(31/2, 3, 20, 12, 150, false, true, false),
         harris_extractor(true, true, true)
     {
         this->n_keypoints = n_keypoints;
@@ -136,24 +136,19 @@ namespace arlib
          * See: https://medium.com/software-incubator/introduction-to-brief-binary-robust-independent-elementary-features-436f4a31a0e6
          * TODO: Maybe move to a BRIEF class?
          */
-        const int patch_size = 15;
-        const int length = 128;
+        const int patch_size = 31; // From the ORB paper
+        const int length = 256;
         const auto samplingGeometry = GAUSSIAN_I;
         std::random_device rd;
         std::mt19937 rand(rd());
         Pixel x1(0), x2(0);
-        // TODO: Is it faster to convolve each patch individually?
-        Matrix<double> gaussianKernel = Matrix<double>::MakeGaussianKernel(4, 5);
-        gaussianKernel.Print();
+        // TODO: Is it faster to convolve each patch individually? (I checked,
+        // doesn't seem so..)
+        Matrix<double> gaussianKernel = Matrix<double>::MakeGaussianKernel(2, 9);
         Matrix<double> img = Matrix<double>::Convolve(frame->GetDoubleMatrix(),
                 gaussianKernel);
 
         for (auto kp : this->keypoints) {
-            if (((kp.x - patch_size/2) < 0) || ((kp.y - patch_size/2) < 0)
-                    || ((kp.x + patch_size/2) >= img.Cols())
-                    || ((kp.y + patch_size/2) >= img.Rows())) {
-                continue;
-            }
             std::string featureVector(length, '0');
             for (auto &b : featureVector) {
                 // TODO: Use a if-constexpr ?
@@ -191,8 +186,10 @@ namespace arlib
                             const double spread = 0.04 * (patch_size * patch_size);
                             std::normal_distribution<double> distribution_x1_x(kp.x, spread);
                             std::normal_distribution<double> distribution_x1_y(kp.y, spread);
-                            x1.x = (int)distribution_x1_x(rand);
-                            x1.y = (int)distribution_x1_y(rand);
+                            x1.x = std::clamp((int)distribution_x1_x(rand),
+                                    kp.x-patch_size/2, kp.x+patch_size/2);
+                            x1.y = std::clamp((int)distribution_x1_y(rand),
+                                    kp.y-patch_size/2, kp.y+patch_size/2);
                             std::normal_distribution<double> distribution_x2_x(kp.x, spread);
                             std::normal_distribution<double> distribution_x2_y(kp.y, spread);
                             x2.x = std::clamp((int)distribution_x2_x(rand),
@@ -215,7 +212,7 @@ namespace arlib
                 }
                 b = img(x1.y, x1.x) < img(x2.y, x2.x) ? '1' : '0';
             }
-            this->features.push_back(FeatureDescriptor(kp.x, kp.y, featureVector)); 
+            this->features.push_back(FeatureDescriptor(kp.x, kp.y, featureVector));
         }
     }
 }

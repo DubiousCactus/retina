@@ -10,11 +10,12 @@
 
 namespace arlib
 {
-    FASTExtractor::FASTExtractor(unsigned short radius, unsigned short
-            intensity_threshold, unsigned short contiguous_pixels, unsigned
-            short n_keypoints, bool full_high_speed_test, bool annotate, bool
-            non_max_suppression)
+    FASTExtractor::FASTExtractor(unsigned int margin, unsigned short radius,
+            unsigned short intensity_threshold, unsigned short
+            contiguous_pixels, unsigned short n_keypoints, bool
+            full_high_speed_test, bool annotate, bool non_max_suppression)
     {
+        this->margin = margin;
         this->full_high_speed_test = full_high_speed_test;
         this->intensity_threshold = intensity_threshold;
         this->contiguous_pixels = contiguous_pixels;
@@ -154,8 +155,8 @@ namespace arlib
         bool allAbove, allBelow, corner, brighter, darker;
         this->annotated_frame = annotate ?  new Frame(*f) : NULL;
         Matrix<int> fastResponse(f->Height(), f->Width());
-        for (int y = this->radius; y < (f->Height() - this->radius); y++) {
-            for (int x = this->radius; x < (f->Width() - this->radius); x++) {
+        for (int y = this->margin; y < (f->Height() - this->margin); y++) {
+            for (int x = this->margin; x < (f->Width() - this->margin); x++) {
                 Ip = f->RawAt(x,y);
                 Pixel center(x, y);
                 center.intensity = Ip;

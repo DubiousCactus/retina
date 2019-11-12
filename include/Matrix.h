@@ -16,45 +16,43 @@ namespace arlib {
 
     template <class T>
     class Matrix {
-    private:
-        T **data;
-        int rows;
-        int cols;
+        private:
+            T **data;
+            int rows;
+            int cols;
 
-    public:
-
-        template <size_t n_rows, size_t n_cols>
-        Matrix(T(&data)[n_rows][n_cols]) {
-            T **data_p = new T*[n_rows];
-            for (size_t i = 0; i < n_rows; i++) {
-                data_p[i] = data[i];
+        public:
+            template <size_t n_rows, size_t n_cols>
+            Matrix(T(&data)[n_rows][n_cols]) {
+                T **data_p = new T*[n_rows];
+                for (size_t i = 0; i < n_rows; i++) {
+                    data_p[i] = data[i];
+                }
+                this->data = data_p;
+                this->rows = n_rows;
+                this->cols = n_cols;
             }
-            this->data = data_p;
-            this->rows = n_rows;
-            this->cols = n_cols;
-        }
-
-        Matrix(T **data, int rows, int cols);
-        Matrix(int rows, int cols);
-        Matrix(const Matrix& m);
-        ~Matrix();
-        Matrix& operator=(Matrix m);
-        Matrix operator*(const Matrix m);
-        T* operator()(int m, int n) const;
-        T *At(int m, int n) const;
-        Matrix Transposed() const;
-        void Transpose();
-        void Print() const;
-        int Rows() const;
-        int Cols() const;
-        /* Returns the central part of the convolution
-           that is the same size as A.*/
-        static Matrix Convolve(const Matrix &m, const Matrix &kernel);
-        static T Sum(const Matrix<T> &m, const int row, const int col, const int windowSize);
-        // Hadamard product of two matrices of the same size
-        static Matrix ElementWiseProduct(const Matrix &m1, const Matrix &m2);
-        static constexpr Matrix MakeGaussianKernel(const int radius);
-        static constexpr Matrix MakeGaussianKernel(const int sigma, const int size);
+            Matrix(T **data, int rows, int cols);
+            Matrix(int rows, int cols);
+            Matrix(const Matrix& m);
+            ~Matrix();
+            Matrix& operator=(Matrix m);
+            Matrix operator*(const Matrix m);
+            T* operator()(int m, int n) const;
+            T *At(int m, int n) const;
+            Matrix Transposed() const;
+            void Transpose();
+            void Print() const;
+            int Rows() const;
+            int Cols() const;
+            /* Returns the central part of the convolution
+               that is the same size as A.*/
+            static Matrix Convolve(const Matrix &m, const Matrix &kernel);
+            static T Sum(const Matrix<T> &m, const int row, const int col, const int windowSize);
+            // Hadamard product of two matrices of the same size
+            static Matrix ElementWiseProduct(const Matrix &m1, const Matrix &m2);
+            static constexpr Matrix MakeGaussianKernel(const int radius);
+            static constexpr Matrix MakeGaussianKernel(const int sigma, const int size);
     };
 
     template <class T>
@@ -180,8 +178,8 @@ namespace arlib {
         for (int x = -radius; x <= radius; ++x) {
             for (int y = -radius; y <= radius; ++y) {
                 r = sqrt(x*x + y*y);
-                *kernel(x+2, y+2) = (exp(-(r*r)/s))/(M_PI*s);
-                sum += *kernel(x+2, y+2);
+                *kernel(x+radius, y+radius) = (exp(-(r*r)/s))/(M_PI*s);
+                sum += *kernel(x+radius, y+radius);
             }
         }
 

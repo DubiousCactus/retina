@@ -16,6 +16,7 @@ namespace arlib
     {
         private:
             bool full_high_speed_test;
+            unsigned int margin;
             unsigned short radius;
             unsigned short intensity_threshold;
             unsigned short contiguous_pixels;
@@ -29,8 +30,8 @@ namespace arlib
             void NonMaxSuppression(Matrix<int>& fastResponse);
 
         public:
-            FASTExtractor(unsigned short radius, unsigned short
-                    intensity_threshold, unsigned short contiguous_pixels,
+            FASTExtractor(unsigned int margin, unsigned short radius, unsigned
+                    short intensity_threshold, unsigned short contiguous_pixels,
                     unsigned short n_keypoints, bool full_high_speed_test, bool
                     annotate, bool non_max_suppression);
 
