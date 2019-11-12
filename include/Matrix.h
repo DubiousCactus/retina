@@ -54,6 +54,7 @@ namespace arlib {
         // Hadamard product of two matrices of the same size
         static Matrix ElementWiseProduct(const Matrix &m1, const Matrix &m2);
         static constexpr Matrix MakeGaussianKernel(const int radius);
+        static constexpr Matrix MakeGaussianKernel(const int sigma, const int size);
     };
 
     template <class T>
@@ -148,9 +149,9 @@ namespace arlib {
     constexpr Matrix<T> Matrix<T>::MakeGaussianKernel(const int radius) {
         assert((radius % 2) != 0); // Kernel must be odd in order to have a central element
         Matrix<T> kernel(2 * radius + 1, 2 * radius + 1);
-        double sum = 0, sigma = radius / 2.0, x;
+        double sum = 0, sigma = radius / 2.0, x = 0;
         auto Gaussian = [](double x, double mu, double sigma) {
-            return exp(-0.5 * pow((x - mu) / sigma, 2));
+            return exp(-0.5 * pow((x - mu) / sigma, 2))/(sigma*sqrt(2*M_PI));
         };
         for (int i = 0; i < kernel.Rows(); ++i) {
             for (int j = 0; j < kernel.Cols(); ++j) {
@@ -160,6 +161,30 @@ namespace arlib {
                 sum += x;
             }
         }
+        // Normalization
+        for (int i = 0; i < kernel.Rows(); ++i) {
+            for (int j = 0; j < kernel.Cols(); ++j) {
+                *kernel(i, j) /= sum;
+            }
+        }
+        return kernel;
+    }
+
+    template <class T>
+    constexpr Matrix<T> Matrix<T>::MakeGaussianKernel(const int sigma, const int size) {
+        Matrix<T> kernel(size, size);
+        int radius = size/2;
+        double r = 0, sum = 0, s = 2.0 * sigma * sigma;
+        //assert((radius % 2) != 0); // Kernel must be odd in order to have a central element
+
+        for (int x = -radius; x <= radius; ++x) {
+            for (int y = -radius; y <= radius; ++y) {
+                r = sqrt(x*x + y*y);
+                *kernel(x+2, y+2) = (exp(-(r*r)/s))/(M_PI*s);
+                sum += *kernel(x+2, y+2);
+            }
+        }
+
         // Normalization
         for (int i = 0; i < kernel.Rows(); ++i) {
             for (int j = 0; j < kernel.Cols(); ++j) {

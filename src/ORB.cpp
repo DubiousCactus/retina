@@ -139,10 +139,12 @@ namespace arlib
         const int patch_size = 15;
         const int length = 128;
         const auto samplingGeometry = GAUSSIAN_I;
-        std::default_random_engine generator;
+        std::random_device rd;
+        std::mt19937 rand(rd());
         Pixel x1(0), x2(0);
         // TODO: Is it faster to convolve each patch individually?
-        Matrix<double> gaussianKernel = Matrix<double>::MakeGaussianKernel(5);
+        Matrix<double> gaussianKernel = Matrix<double>::MakeGaussianKernel(4, 5);
+        gaussianKernel.Print();
         Matrix<double> img = Matrix<double>::Convolve(frame->GetDoubleMatrix(),
                 gaussianKernel);
 
@@ -163,26 +165,24 @@ namespace arlib
                                 distribution_x(kp.x-spread, kp.x+spread);
                             std::uniform_int_distribution<int>
                                 distribution_y(kp.y-spread, kp.y+spread);
-                            x1.x = distribution_x(generator);
-                            x1.y = distribution_y(generator);
-                            x2.x = distribution_x(generator);
-                            x2.y = distribution_y(generator);
+                            x1.x = distribution_x(rand);
+                            x1.y = distribution_y(rand);
+                            x2.x = distribution_x(rand);
+                            x2.y = distribution_y(rand);
                         }
                         break;
                     case GAUSSIAN_I:
                         {
                             const double spread = 0.04 * (patch_size * patch_size);
-                            //const double spread = ((kp.x+patch_size/2)-(kp.x+patch_size/2))/4;
-                            //const double spread = patch_size/4;
                             std::normal_distribution<double> distribution_x(kp.x, spread);
                             std::normal_distribution<double> distribution_y(kp.y, spread);
-                            x1.x = std::clamp((int)distribution_x(generator),
+                            x1.x = std::clamp((int)distribution_x(rand),
                                     kp.x-patch_size/2, kp.x+patch_size/2);
-                            x1.y = std::clamp((int)distribution_y(generator),
+                            x1.y = std::clamp((int)distribution_y(rand),
                                     kp.y-patch_size/2, kp.y+patch_size/2);
-                            x2.x = std::clamp((int)distribution_x(generator),
+                            x2.x = std::clamp((int)distribution_x(rand),
                                     kp.x-patch_size/2, kp.x+patch_size/2);
-                            x2.y = std::clamp((int)distribution_y(generator),
+                            x2.y = std::clamp((int)distribution_y(rand),
                                     kp.y-patch_size/2, kp.y+patch_size/2);
                         }
                         break;
@@ -191,27 +191,27 @@ namespace arlib
                             const double spread = 0.04 * (patch_size * patch_size);
                             std::normal_distribution<double> distribution_x1_x(kp.x, spread);
                             std::normal_distribution<double> distribution_x1_y(kp.y, spread);
-                            x1.x = (int)distribution_x1_x(generator);
-                            x1.y = (int)distribution_x1_y(generator);
+                            x1.x = (int)distribution_x1_x(rand);
+                            x1.y = (int)distribution_x1_y(rand);
                             std::normal_distribution<double> distribution_x2_x(kp.x, spread);
                             std::normal_distribution<double> distribution_x2_y(kp.y, spread);
-                            x2.x = std::clamp((int)distribution_x2_x(generator),
+                            x2.x = std::clamp((int)distribution_x2_x(rand),
                                     kp.x-patch_size/2, kp.x+patch_size/2);
-                            x2.y = std::clamp((int)distribution_x2_y(generator),
+                            x2.y = std::clamp((int)distribution_x2_y(rand),
                                     kp.y-patch_size/2, kp.y+patch_size/2);
                         }
                         break;
-                    case COARSE_POLAR_GRID_I:
+                    case COARSE_POLAR_GRID_I: // TODO
                         // Both x and y pixels in the random pair are sampled
                         // from discrete locations of a coarse polar grid
                         // introducing a spatial quantization.
                         break;
-                    case COARSE_POLAR_GRID_II:
+                    case COARSE_POLAR_GRID_II: // TODO
                         // Pick x at (0, 0) (which is kp) and y from discrete
                         // locations of a coarse polar grid.
                         break;
                     default:
-                        x1.intensity = x2.intensity = 0;
+                        x1.x = x1.y = x2.x = x2.y = 0;
                 }
                 b = img(x1.y, x1.x) < img(x2.y, x2.x) ? '1' : '0';
             }
