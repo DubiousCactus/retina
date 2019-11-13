@@ -135,10 +135,9 @@ namespace arlite
         return sortedCircle;
     }
 
-    float FASTExtractor::PatchOrientation(const Frame *f, const int cx, const int cy)
+    float FASTExtractor::PatchOrientation(const Matrix<double> &img, const int cx, const int cy)
     {
         float orientation, m01, m10;
-        Matrix<double> img = f->GetDoubleMatrix(cx, cy, 2*centroid_radius);
         m01 = m10 = 0;
         for (int y = cy-radius; y <= cy+radius; ++y) {
             for (int x = cx-radius; x <= cx+radius; ++x) {
@@ -158,6 +157,7 @@ namespace arlite
      * Accelerated Segment Test algorithm with a given circular radius
      * (threshold)
      */
+    // TODO: Work on the image matrix directly
     std::vector<Keypoint> FASTExtractor::Extract(const Frame *f)
     {
         // TODO: Implement the paper "Machine Learning a Corner Detector"
@@ -177,6 +177,7 @@ namespace arlite
         bool allAbove, allBelow, corner, brighter, darker;
         this->annotated_frame = annotate ?  new Frame(*f) : NULL;
         Matrix<int> fastResponse(f->Height(), f->Width());
+        Matrix<double> imgMatrix = f->GetDoubleMatrix();
         for (int y = this->margin; y < (f->Height() - this->margin); y++) {
             for (int x = this->margin; x < (f->Width() - this->margin); x++) {
                 Ip = f->RawAt(x,y);
@@ -274,7 +275,7 @@ namespace arlite
                     if (!non_max_suppression) {
                         float patchOrientation = 0;
                         if (orientation) {
-                            patchOrientation = this->PatchOrientation(f, x, y);
+                            patchOrientation = this->PatchOrientation(imgMatrix, x, y);
                         }
                         this->keypoints.push_back(Keypoint(x, y, score, patchOrientation));
                     } else {
@@ -287,7 +288,7 @@ namespace arlite
         }
 
         if (non_max_suppression) {
-            this->NonMaxSuppression(f, fastResponse);
+            this->NonMaxSuppression(imgMatrix, fastResponse);
         }
 
         std::cout<< "\t-> Found " << this->keypoints.size() << " keypoints" << std::endl;
@@ -295,7 +296,7 @@ namespace arlite
         return this->keypoints;
     }
 
-    void FASTExtractor::NonMaxSuppression(const Frame *f, Matrix<int>& fastResponse)
+    void FASTExtractor::NonMaxSuppression(const Matrix<double> &imgMatrix, Matrix<int>& fastResponse)
     {
         std::vector<Keypoint> suppressed;
         // TODO: Verify that this works as intended (no duplicates)
@@ -325,7 +326,7 @@ namespace arlite
                 if (*fastResponse(y, x) > 0) {
                     float patchOrientation = 0;
                     if (orientation) {
-                        patchOrientation = this->PatchOrientation(f, x, y);
+                        patchOrientation = this->PatchOrientation(imgMatrix, x, y);
                     }
                     suppressed.push_back(Keypoint(x, y, *fastResponse(y, x), patchOrientation));
                 }

@@ -29,11 +29,11 @@ namespace arlite
              */
             std::vector<Pixel*> BresenhamCircle(const Pixel center, int radius,
                     const Frame* frame);
-            void NonMaxSuppression(const Frame *f, Matrix<int>& fastResponse);
+            void NonMaxSuppression(const Matrix<double> &imgMatrix, Matrix<int>& fastResponse);
             /* Computes the given patch's orientation using the intensity
              * centroid and the keypoint as center of patch.
              */
-            float PatchOrientation(const Frame *f, const int cx, const int cy);
+            float PatchOrientation(const Matrix<double> &img, const int cx, const int cy);
 
         public:
             FASTExtractor(unsigned int margin, unsigned short radius, unsigned
