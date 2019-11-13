@@ -6,7 +6,7 @@
 
 - [x] Harris
 - [x] FAST
-    - [ ] oFAST
+    - [x] oFAST
 - [x] BRIEF
     - [ ] rBRIEF
 - [ ] ORB
