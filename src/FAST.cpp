@@ -13,9 +13,12 @@ namespace arlite
     FASTExtractor::FASTExtractor(unsigned int margin, unsigned short radius,
             unsigned short intensity_threshold, unsigned short
             contiguous_pixels, unsigned short n_keypoints, bool
-            full_high_speed_test, bool annotate, bool non_max_suppression)
+            full_high_speed_test, bool annotate, bool non_max_suppression, bool
+            orientation, int centroidRadius)
     {
         this->margin = margin;
+        this->orientation = orientation;
+        this->centroid_radius = centroidRadius;
         this->full_high_speed_test = full_high_speed_test;
         this->intensity_threshold = intensity_threshold;
         this->contiguous_pixels = contiguous_pixels;
@@ -130,6 +133,25 @@ namespace arlite
         }
 
         return sortedCircle;
+    }
+
+    float FASTExtractor::PatchOrientation(const Frame *f, const int cx, const int cy)
+    {
+        float orientation, m01, m10;
+        Matrix<double> img = f->GetDoubleMatrix(cx, cy, 2*centroid_radius);
+        m01 = m10 = 0;
+        for (int y = cy-radius; y <= cy+radius; ++y) {
+            for (int x = cx-radius; x <= cx+radius; ++x) {
+                if (sqrt(pow(x-cx, 2)+pow(y-cy, 2)) <= radius) {
+                    //m01 += pow(x, 0) * pow(y, 1) * *img(y, x);
+                    //m10 += pow(x, 1) * pow(y, 0) * *img(y, x);
+                    m01 += *img(y, x) * y;
+                    m10 += *img(y, x) * x;
+                }
+            }
+        }
+        orientation = atan2(m01, m10);
+        return orientation;
     }
 
     /* Extract N keypoints in the given frame, using the Features from
@@ -250,7 +272,11 @@ namespace arlite
                         score += abs(Ip - circle.at(i)->intensity);
                     }
                     if (!non_max_suppression) {
-                        this->keypoints.push_back(Keypoint(x, y, score));
+                        float patchOrientation = 0;
+                        if (orientation) {
+                            patchOrientation = this->PatchOrientation(f, x, y);
+                        }
+                        this->keypoints.push_back(Keypoint(x, y, score, patchOrientation));
                     } else {
                         *fastResponse(y, x) = score;
                     }
@@ -261,7 +287,7 @@ namespace arlite
         }
 
         if (non_max_suppression) {
-            this->NonMaxSuppression(fastResponse);
+            this->NonMaxSuppression(f, fastResponse);
         }
 
         std::cout<< "\t-> Found " << this->keypoints.size() << " keypoints" << std::endl;
@@ -269,7 +295,7 @@ namespace arlite
         return this->keypoints;
     }
 
-    void FASTExtractor::NonMaxSuppression(Matrix<int>& fastResponse)
+    void FASTExtractor::NonMaxSuppression(const Frame *f, Matrix<int>& fastResponse)
     {
         std::vector<Keypoint> suppressed;
         // TODO: Verify that this works as intended (no duplicates)
@@ -297,7 +323,11 @@ namespace arlite
         for (int y = 1; y < fastResponse.Rows(); ++y) {
             for (int x = 1; x < fastResponse.Cols(); ++x) {
                 if (*fastResponse(y, x) > 0) {
-                    suppressed.push_back(Keypoint(x, y, *fastResponse(y, x)));
+                    float patchOrientation = 0;
+                    if (orientation) {
+                        patchOrientation = this->PatchOrientation(f, x, y);
+                    }
+                    suppressed.push_back(Keypoint(x, y, *fastResponse(y, x), patchOrientation));
                 }
             }
         }

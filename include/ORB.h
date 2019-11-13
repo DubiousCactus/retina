@@ -22,7 +22,7 @@ namespace arlite
             unsigned short pog_levels;
             /* Build a scale pyramid of the base image */
             ScalePyramid BuildPyramid();
-            float IntensityCentroid();
+            float IntensityCentroid(Matrix<double> &img, Keypoint kp, int patchSize);
             FASTExtractor fast_extractor;
             HarrisExtractor harris_extractor;
             BRIEFDescriptor brief_descriptor;

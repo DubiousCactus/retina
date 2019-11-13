@@ -36,12 +36,14 @@ namespace arlite
         int x;
         int y;
         float score;
+        float orientation;
 
         Keypoint()
         {
             x = -1;
             y = -1;
             score = 0;
+            orientation = 0;
         }
 
         Keypoint(int x, int y, float score)
@@ -49,6 +51,15 @@ namespace arlite
             this->x = x;
             this->y = y;
             this->score = score;
+            this->orientation = 0;
+        }
+
+        Keypoint(int x, int y, float score, float orientation)
+        {
+            this->x = x;
+            this->y = y;
+            this->score = score;
+            this->orientation = orientation;
         }
 
         Keypoint(int x, int y)
@@ -56,6 +67,7 @@ namespace arlite
             this->x = x;
             this->y = y;
             this->score = 0;
+            this->orientation = 0;
         }
 
         bool operator<(const Keypoint& kp) const

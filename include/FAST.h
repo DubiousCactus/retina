@@ -16,6 +16,8 @@ namespace arlite
     {
         private:
             bool full_high_speed_test;
+            bool orientation;
+            int centroid_radius;
             unsigned int margin;
             unsigned short radius;
             unsigned short intensity_threshold;
@@ -27,13 +29,18 @@ namespace arlite
              */
             std::vector<Pixel*> BresenhamCircle(const Pixel center, int radius,
                     const Frame* frame);
-            void NonMaxSuppression(Matrix<int>& fastResponse);
+            void NonMaxSuppression(const Frame *f, Matrix<int>& fastResponse);
+            /* Computes the given patch's orientation using the intensity
+             * centroid and the keypoint as center of patch.
+             */
+            float PatchOrientation(const Frame *f, const int cx, const int cy);
 
         public:
             FASTExtractor(unsigned int margin, unsigned short radius, unsigned
                     short intensity_threshold, unsigned short contiguous_pixels,
                     unsigned short n_keypoints, bool full_high_speed_test, bool
-                    annotate, bool non_max_suppression);
+                    annotate, bool non_max_suppression, bool orientation, int
+                    centroidRadius);
 
             /* Extract N keypoints in the given frame, using the Features from
              * Accelerated Segment Test algorithm with a given circular radius
