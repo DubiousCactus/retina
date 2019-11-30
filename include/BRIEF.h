@@ -27,13 +27,14 @@ enum SamplingGeometry
 class BRIEFDescriptor
 {
   private:
+    bool steer;
     int patch_size;
     int size;
     SamplingGeometry sampling_geometry;
     std::mt19937 randr;
 
   public:
-    BRIEFDescriptor(int size, int patchSize, SamplingGeometry samplingGeometry);
+    BRIEFDescriptor(int size, int patchSize, SamplingGeometry samplingGeometry, bool steer);
     std::vector<FeatureDescriptor>
     Run(Matrix<double>& img, std::vector<Keypoint> keypoints);
 };

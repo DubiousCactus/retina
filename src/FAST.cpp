@@ -146,6 +146,47 @@ FASTExtractor::PatchOrientation(const Matrix<double>& img,
                                 const int cx,
                                 const int cy)
 {
+    /* Compare with OpenCV's code to see if I made any mistake:
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+static void ICAngles(const Mat& img, const std::vector<Rect>& layerinfo,
+                     std::vector<KeyPoint>& pts, const std::vector<int> & u_max, int half_k)
+{
+    int step = (int)img.step1();
+    size_t ptidx, ptsize = pts.size();
+
+    for( ptidx = 0; ptidx < ptsize; ptidx++ )
+    {
+        const Rect& layer = layerinfo[pts[ptidx].octave];
+        const uchar* center = &img.at<uchar>(cvRound(pts[ptidx].pt.y) + layer.y, cvRound(pts[ptidx].pt.x) + layer.x);
+
+        int m_01 = 0, m_10 = 0;
+
+        // Treat the center line differently, v=0
+        for (int u = -half_k; u <= half_k; ++u)
+            m_10 += u * center[u];
+
+        // Go line by line in the circular patch
+        for (int v = 1; v <= half_k; ++v)
+        {
+            // Proceed over the two lines
+            int v_sum = 0;
+            int d = u_max[v];
+            for (int u = -d; u <= d; ++u)
+            {
+                int val_plus = center[u + v*step], val_minus = center[u - v*step];
+                v_sum += (val_plus - val_minus);
+                m_10 += u * (val_plus + val_minus);
+            }
+            m_01 += v * v_sum;
+        }
+
+        pts[ptidx].angle = fastAtan2((float)m_01, (float)m_10);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    */
     float orientation, m01, m10;
     m01 = m10 = 0;
     for (int y = cy - radius; y <= cy + radius; ++y) {
