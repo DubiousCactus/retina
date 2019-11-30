@@ -8,8 +8,10 @@
 - [x] FAST
     - [x] oFAST
 - [x] BRIEF
+    - [ ] steered BRIEF
     - [ ] rBRIEF
 - [ ] ORB
+    - [ ] Learning Good Binary Features
 
 ### Target surface recognition
 

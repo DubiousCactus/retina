@@ -9,90 +9,89 @@
 #define FEATUREEXTRACTOR_H
 
 #include <algorithm>
-#include <iostream>
-#include <vector>
 #include <cassert>
 #include <chrono>
+#include <iostream>
+#include <vector>
 
 #include "Frame.h"
 
-namespace arlite
+namespace arlite {
+
+struct FeatureDescriptor
 {
+    int x;
+    int y;
+    std::string binary_descriptor;
 
-    struct FeatureDescriptor {
-        int x;
-        int y;
-        std::string binary_descriptor;
-
-        FeatureDescriptor(int x, int y, std::string descriptor)
-        {
-            this->x = x;
-            this->y = y;
-            this->binary_descriptor = descriptor;
-        }
-    };
-
-    struct Keypoint {
-        int x;
-        int y;
-        float score;
-        float orientation;
-
-        Keypoint()
-        {
-            x = -1;
-            y = -1;
-            score = 0;
-            orientation = 0;
-        }
-
-        Keypoint(int x, int y, float score)
-        {
-            this->x = x;
-            this->y = y;
-            this->score = score;
-            this->orientation = 0;
-        }
-
-        Keypoint(int x, int y, float score, float orientation)
-        {
-            this->x = x;
-            this->y = y;
-            this->score = score;
-            this->orientation = orientation;
-        }
-
-        Keypoint(int x, int y)
-        {
-            this->x = x;
-            this->y = y;
-            this->score = 0;
-            this->orientation = 0;
-        }
-
-        bool operator<(const Keypoint& kp) const
-        {
-            return score < kp.score;
-        }
-    };
-
-    struct ScalePyramid {
-        std::vector<Frame*> scales;
-    };
-
-    class FeatureExtractor
+    FeatureDescriptor(int x, int y, std::string descriptor)
     {
-        protected:
-            std::vector<FeatureDescriptor> features;
-            std::vector<Keypoint> keypoints;
-            Frame *annotated_frame;
-            bool non_max_suppression;
-            bool annotate;
+        this->x = x;
+        this->y = y;
+        this->binary_descriptor = descriptor;
+    }
+};
 
-        public:
-            virtual std::vector<Keypoint> Extract(const Frame *frame)=0;
-            virtual Frame* GetAnnotatedFrame()=0;
-    };
+struct Keypoint
+{
+    int x;
+    int y;
+    float score;
+    float orientation;
+
+    Keypoint()
+    {
+        x = -1;
+        y = -1;
+        score = 0;
+        orientation = 0;
+    }
+
+    Keypoint(int x, int y, float score)
+    {
+        this->x = x;
+        this->y = y;
+        this->score = score;
+        this->orientation = 0;
+    }
+
+    Keypoint(int x, int y, float score, float orientation)
+    {
+        this->x = x;
+        this->y = y;
+        this->score = score;
+        this->orientation = orientation;
+    }
+
+    Keypoint(int x, int y)
+    {
+        this->x = x;
+        this->y = y;
+        this->score = 0;
+        this->orientation = 0;
+    }
+
+    bool operator<(const Keypoint& kp) const { return score < kp.score; }
+};
+
+struct ScalePyramid
+{
+    std::vector<Frame*> scales;
+};
+
+class FeatureExtractor
+{
+  protected:
+    std::vector<FeatureDescriptor> features;
+    std::vector<Keypoint> keypoints;
+    Frame* annotated_frame;
+    bool non_max_suppression;
+    bool annotate;
+
+  public:
+    virtual std::vector<Keypoint> Extract(const Frame* frame) = 0;
+    virtual Frame* GetAnnotatedFrame() = 0;
+};
 }
 
 #endif /* !FEATUREEXTRACTOR_H */

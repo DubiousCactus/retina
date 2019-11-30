@@ -8,31 +8,29 @@
 #ifndef ORB_H
 #define ORB_H
 
+#include "BRIEF.h"
+#include "FAST.h"
 #include "FeatureExtractor.h"
 #include "Harris.h"
-#include "FAST.h"
-#include "BRIEF.h"
 
-namespace arlite
+namespace arlite {
+class ORBExtractor : FeatureExtractor
 {
-    class ORBExtractor: FeatureExtractor
-    {
-        private:
-            size_t n_keypoints;
-            unsigned short pog_levels;
-            /* Build a scale pyramid of the base image */
-            ScalePyramid BuildPyramid();
-            float IntensityCentroid(Matrix<double> &img, Keypoint kp, int patchSize);
-            FASTExtractor fast_extractor;
-            HarrisExtractor harris_extractor;
-            BRIEFDescriptor brief_descriptor;
+  private:
+    size_t n_keypoints;
+    unsigned short pog_levels;
+    /* Build a scale pyramid of the base image */
+    ScalePyramid BuildPyramid();
+    FASTExtractor fast_extractor;
+    HarrisExtractor harris_extractor;
+    BRIEFDescriptor brief_descriptor;
 
-        public:
-            ORBExtractor(size_t n_keypoints);
-            std::vector<Keypoint> GetKeypoints();
-            std::vector<Keypoint> Extract(const Frame* frame);
-            Frame* GetAnnotatedFrame();
-    };
+  public:
+    ORBExtractor(size_t n_keypoints);
+    std::vector<Keypoint> GetKeypoints();
+    std::vector<Keypoint> Extract(const Frame* frame);
+    Frame* GetAnnotatedFrame();
+};
 }
 
 #endif /* !ORB_H */
