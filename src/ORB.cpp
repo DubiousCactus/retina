@@ -29,7 +29,15 @@ ORBExtractor::ORBExtractor(size_t n_keypoints)
   , brief_descriptor(256, 31, GAUSSIAN_I, true)
 {
   this->n_keypoints = n_keypoints;
-  this->pog_levels = 1;
+  this->pog_levels = 5;
+  this->scaling_factor = sqrt(2);
+}
+
+ScalePyramid
+ORBExtractor::BuildPyramid()
+{
+  // TODO: In the paper they use "area-based interpolation for efficient
+  // decimation".
 }
 
 std::vector<Keypoint>
@@ -43,15 +51,15 @@ ORBExtractor::Extract(const Frame* frame)
 
   assert(frame != nullptr);
   // STEP 1: Build the scale pyramid of the current frame
-  // std::cout << "\t-> Building the pyramid" << std::endl;
-  // ScalePyramid pyramid = this->BuildPyramid();
+  std::cout << "\t-> Building the pyramid" << std::endl;
+  ScalePyramid pyramid = this->BuildPyramid();
 
   auto start = std::chrono::steady_clock::now();
 
   this->keypoints = this->fast_extractor.Extract(frame);
 
   auto end = std::chrono::steady_clock::now();
-  std::cout << "\t-> FAST executed in "
+  std::cout << "\t-> oFAST executed in "
             << (float)std::chrono::duration_cast<std::chrono::microseconds>(
                  end - start)
                    .count() /
@@ -86,10 +94,18 @@ ORBExtractor::Extract(const Frame* frame)
   Matrix<double> gaussianKernel = Matrix<double>::MakeGaussianKernel(2, 9);
   Matrix<double> img =
     Matrix<double>::Convolve(frame->GetDoubleMatrix(), gaussianKernel);
-  this->features = this->brief_descriptor.Run(img, this->keypoints);
-
   end = std::chrono::steady_clock::now();
-  std::cout << "\t-> BRIEF descriptors computed in "
+  std::cout << "\t-> Gaussian smoothing executed in "
+            << (float)std::chrono::duration_cast<std::chrono::microseconds>(
+                 end - start)
+                   .count() /
+                 1000
+            << " milliseconds" << std::endl;
+
+  start = std::chrono::steady_clock::now();
+  this->features = this->brief_descriptor.Run(img, this->keypoints);
+  end = std::chrono::steady_clock::now();
+  std::cout << "\t-> sBRIEF descriptors computed in "
             << (float)std::chrono::duration_cast<std::chrono::microseconds>(
                  end - start)
                    .count() /

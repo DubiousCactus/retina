@@ -19,6 +19,7 @@ class ORBExtractor : FeatureExtractor
   private:
     size_t n_keypoints;
     unsigned short pog_levels;
+    float scaling_factor;
     /* Build a scale pyramid of the base image */
     ScalePyramid BuildPyramid();
     FASTExtractor fast_extractor;

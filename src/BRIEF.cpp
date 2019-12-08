@@ -32,6 +32,7 @@ BRIEFDescriptor::Run(Matrix<double>& img, std::vector<Keypoint> keypoints)
   // them all to each keypoint center
   for (auto kp : keypoints) {
     std::string featureVector(this->size, '0');
+    // TODO: Unwrap this loops for each byte
     for (auto& b : featureVector) {
       // TODO: Use a if-constexpr ?
       switch (this->sampling_geometry) {
