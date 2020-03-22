@@ -16,6 +16,8 @@ namespace arlite {
 ScalePyramid
 ORBExtractor::BuildPyramid()
 {
+  // TODO: In the paper they use "area-based interpolation for efficient
+  // decimation".
   ScalePyramid pyramid;
   /*for (unsigned short i = 0; i < this->pog_levels; i++)
       pyramid.scales.push_back(this->frame);*/
@@ -31,13 +33,6 @@ ORBExtractor::ORBExtractor(size_t n_keypoints)
   this->n_keypoints = n_keypoints;
   this->pog_levels = 5;
   this->scaling_factor = sqrt(2);
-}
-
-ScalePyramid
-ORBExtractor::BuildPyramid()
-{
-  // TODO: In the paper they use "area-based interpolation for efficient
-  // decimation".
 }
 
 std::vector<Keypoint>

@@ -236,6 +236,8 @@ Matrix<T>::Sum(const Matrix<T>& m,
 {
   int sum = 0;
   int offset = windowSize / 2;
+  assert((row - offset) >= 0 && (row + offset) < m.Rows());
+  assert((col - offset) >= 0 && (col + offset) < m.Cols());
   for (int i = -offset; i <= offset; ++i) {
     for (int j = -offset; j <= offset; ++j) {
       sum += *m(row + i, col + j);
@@ -266,7 +268,30 @@ Matrix<T>::Resize(const Matrix<T>& m,
                   unsigned int mCols,
                   InterpolationMethod interpolation)
 {
+  // TODO: Move to Frame
+  std::cout << "Resizing" << std::endl;
   Matrix<T> resized(mRows, mCols);
+  float ystep, xstep, area;
+  // TODO: Handle float values for xstep and ystep
+  ystep = m.Cols() / mCols;
+  xstep = m.Rows() / mRows;
+  area = ystep * xstep;
+  std::cout << "xstep: " << xstep << ", ystep: " << ystep << std::endl;
+  if (mRows < m.Rows() || mCols < m.Cols()) {
+    // TODO: Downscale
+    for (int j = 0; j < (resized.Rows() - ystep); j++) {
+      for (int i = 0; i < (resized.Cols() - xstep); i++) {
+        for (int k = 0; k < (ystep - 1); k++) {
+          for (int l = 0; l < (xstep - 1); l++) {
+            *resized(j, i) += *m((ystep*j)+k, (xstep*i)+l);
+          }
+        }
+        *resized(j, i) /= area;
+      }
+    }
+  } else {
+    // TODO: Upscale
+  }
 
   return resized;
 }

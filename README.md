@@ -8,8 +8,8 @@
 - [x] FAST
     - [x] oFAST
 - [x] BRIEF
-    - [ ] steered BRIEF
-    - [ ] rBRIEF
+    - [x] steered BRIEF
+    - [x] rBRIEF
 - [ ] ORB
     - [ ] Learning Good Binary Features
 
