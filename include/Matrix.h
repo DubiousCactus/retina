@@ -268,7 +268,7 @@ Matrix<T>::Resize(const Matrix<T>& m,
                   unsigned int mCols,
                   InterpolationMethod interpolation)
 {
-  // TODO: Move to Frame
+  // TODO: Move to Frame?
   std::cout << "Resizing" << std::endl;
   Matrix<T> resized(mRows, mCols);
   float ystep, xstep, area;
@@ -278,15 +278,16 @@ Matrix<T>::Resize(const Matrix<T>& m,
   area = ystep * xstep;
   std::cout << "xstep: " << xstep << ", ystep: " << ystep << std::endl;
   if (mRows < m.Rows() || mCols < m.Cols()) {
-    // TODO: Downscale
-    for (int j = 0; j < (resized.Rows() - ystep); j++) {
-      for (int i = 0; i < (resized.Cols() - xstep); i++) {
-        for (int k = 0; k < (ystep - 1); k++) {
-          for (int l = 0; l < (xstep - 1); l++) {
-            *resized(j, i) += *m((ystep*j)+k, (xstep*i)+l);
+    if (interpolation == InterpolationMethod::INTER_AREA) {
+      for (int j = 0; j < (resized.Rows() - ystep); j++) {
+        for (int i = 0; i < (resized.Cols() - xstep); i++) {
+          for (int k = 0; k < (ystep - 1); k++) {
+            for (int l = 0; l < (xstep - 1); l++) {
+              *resized(j, i) += *m((ystep*j)+k, (xstep*i)+l);
+            }
           }
+          *resized(j, i) /= area;
         }
-        *resized(j, i) /= area;
       }
     }
   } else {
