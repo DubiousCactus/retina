@@ -1,7 +1,6 @@
 /*
  * FAST.h
- * Copyright (C) 2019 transpalette <transpalette@arch-cactus>
- *
+ * Copyright (C) 2019-2020 Théo Morales <theo.morales.fr@gmail.com>
  * Distributed under terms of the MIT license.
  */
 
@@ -10,7 +9,7 @@
 
 #include "FeatureExtractor.h"
 
-namespace arlite {
+namespace retina {
 class FASTExtractor : FeatureExtractor
 {
   private:
@@ -27,14 +26,14 @@ class FASTExtractor : FeatureExtractor
      * Bresenham's circle drawing algorithm
      */
     std::vector<Pixel*>
-    BresenhamCircle(const Pixel center, int radius, const Frame* frame);
+    BresenhamCircle(Pixel center, int radius, const Frame* frame);
     void NonMaxSuppression(const Matrix<double>& imgMatrix,
                            Matrix<int>& fastResponse);
     /* Computes the given patch's orientation using the intensity
      * centroid and the keypoint as center of patch.
      */
     float
-    PatchOrientation(const Matrix<double>& img, const int cx, const int cy);
+    PatchOrientation(const Matrix<double>& img, int cx, int cy);
 
   public:
     FASTExtractor(unsigned int margin,
@@ -52,8 +51,8 @@ class FASTExtractor : FeatureExtractor
      * Accelerated Segment Test algorithm with a given circular radius
      * (threshold)
      */
-    std::vector<Keypoint> Extract(const Frame* f);
-    Frame* GetAnnotatedFrame();
+    std::vector<KeyPoint> Extract(const Frame* f) override;
+    Frame* GetAnnotatedFrame() override;
 };
 }
 

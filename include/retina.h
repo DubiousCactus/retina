@@ -1,12 +1,11 @@
 /*
- * arlite.h
- * Copyright (C) 2019 transpalette <transpalette@arch-cactus>
- *
+ * retina.h
+ * Copyright (C) 2019-2020 Théo Morales <theo.morales.fr@gmail.com>
  * Distributed under terms of the MIT license.
  */
 
-#ifndef ARLITE_H
-#define ARLITE_H
+#ifndef RETINA_H
+#define RETINA_H
 
 #include "FeatureExtractor.h"
 #include "ORB.h"
@@ -15,4 +14,4 @@
 #include "FAST.h"
 #include "Frame.h"
 
-#endif /* !ARLITE_H */
+#endif /* !RETINA_H */

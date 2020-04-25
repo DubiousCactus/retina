@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.16)
-project(arlite)
+cmake_minimum_required(VERSION 3.17)
+project(retina)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
@@ -10,8 +10,8 @@ include_directories(include)
 include_directories(src)
 find_package(Threads)
 
-add_executable(arlite
-        include/arlite.h
+add_executable(retina
+        include/retina.h
         include/BRIEF.h
         include/FAST.h
         include/FeatureExtractor.h

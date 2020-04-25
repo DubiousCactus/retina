@@ -1,7 +1,6 @@
-cmake_minimum_required (VERSION 3.9)
+cmake_minimum_required (VERSION 3.17)
 
-# projectname is the same as the main-executable
-project(arlite VERSION 0.1 DESCRIPTION "An (almost) zero-dependency AR library")
+project(retina VERSION 0.1 DESCRIPTION "A minimal dependency Computer Vision library")
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)

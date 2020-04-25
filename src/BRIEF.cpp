@@ -1,13 +1,14 @@
 /*
  * BRIEF.cpp
- * Copyright (C) 2019 transpalette <transpalette@arch-cactus>
- *
+ * Copyright (C) 2019-2020 Théo Morales <theo.morales.fr@gmail.com>
  * Distributed under terms of the MIT license.
  */
 
 #include "BRIEF.h"
 
-namespace arlite {
+#include <cmath>
+
+namespace retina {
 BRIEFDescriptor::BRIEFDescriptor(int size,
                                  int patchSize,
                                  SamplingGeometry samplingGeometry,
@@ -21,7 +22,7 @@ BRIEFDescriptor::BRIEFDescriptor(int size,
 }
 
 std::vector<FeatureDescriptor>
-BRIEFDescriptor::Run(Matrix<double>& img, std::vector<Keypoint> keypoints)
+BRIEFDescriptor::Run(Matrix<double>& img, std::vector<KeyPoint> keypoints)
 {
   std::vector<FeatureDescriptor> descriptors;
   Pixel x1(0), x2(0);
@@ -46,7 +47,7 @@ BRIEFDescriptor::Run(Matrix<double>& img, std::vector<Keypoint> keypoints)
           x2.y = distribution_y(randr);
         } break;
         case GAUSSIAN_I: {
-          const double spread = 0.04 * (patch_size / 2 * patch_size / 2);
+          const double spread = 0.04 * ((float) patch_size / 2 * (float) patch_size / 2);
           std::normal_distribution<double> distribution_x(0, spread);
           std::normal_distribution<double> distribution_y(0, spread);
           x1.x = std::clamp(
@@ -59,7 +60,7 @@ BRIEFDescriptor::Run(Matrix<double>& img, std::vector<Keypoint> keypoints)
             (int)round(distribution_y(randr)), -patch_size / 2, patch_size / 2);
         } break;
         case GAUSSIAN_II: {
-          const double spread = 0.04 * (patch_size / 2 * patch_size / 2);
+          const double spread = 0.04 * ((float) patch_size / 2 * (float) patch_size / 2);
           std::normal_distribution<double> distribution_x1_x(0, spread);
           std::normal_distribution<double> distribution_x1_y(0, spread);
           x1.x = std::clamp(
@@ -92,15 +93,15 @@ BRIEFDescriptor::Run(Matrix<double>& img, std::vector<Keypoint> keypoints)
         float theta = kp.orientation;
         // theta *= (float)(M_PI/180.0); // Convert from deg to rad (but fucking
         // why???)
-        x1.x = round(cos(theta) * x1.x - sin(theta) * x1.y);
-        x1.y = round(sin(theta) * x1.x + cos(theta) * x1.y);
-        x2.x = round(cos(theta) * x2.x - sin(theta) * x2.y);
-        x2.y = round(sin(theta) * x2.x + cos(theta) * x2.y);
+        x1.x = std::round(std::cos(theta) * (float) x1.x - std::sin(theta) * (float) x1.y);
+        x1.y = std::round(std::sin(theta) * (float) x1.x + std::cos(theta) * (float) x1.y);
+        x2.x = std::round(std::cos(theta) * (float) x2.x - std::sin(theta) * (float) x2.y);
+        x2.y = std::round(std::sin(theta) * (float) x2.x + std::cos(theta) * (float) x2.y);
       }
       b = img(kp.y + x1.y, kp.x + x1.x) < img(kp.y + x2.y, kp.x + x2.x) ? '1'
                                                                         : '0';
     }
-    descriptors.push_back(FeatureDescriptor(kp.x, kp.y, featureVector));
+    descriptors.emplace_back(kp.x, kp.y, featureVector);
   }
 
   return descriptors;

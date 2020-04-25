@@ -1,7 +1,6 @@
 /*
  * Matrix_test.cpp
- * Copyright (C) 2019 transpalette <transpalette@arch-cactus>
- *
+ * Copyright (C) 2019-2020 Théo Morales <theo.morales.fr@gmail.com>
  * Distributed under terms of the MIT license.
  */
 

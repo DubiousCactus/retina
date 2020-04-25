@@ -12,11 +12,12 @@
 #include <cassert>
 #include <chrono>
 #include <iostream>
+#include <utility>
 #include <vector>
 
 #include "Frame.h"
 
-namespace arlite {
+namespace retina {
 
 struct FeatureDescriptor
 {
@@ -28,18 +29,18 @@ struct FeatureDescriptor
     {
         this->x = x;
         this->y = y;
-        this->binary_descriptor = descriptor;
+        this->binary_descriptor = std::move(descriptor);
     }
 };
 
-struct Keypoint
+struct KeyPoint
 {
     int x;
     int y;
     float score;
     float orientation;
 
-    Keypoint()
+    KeyPoint()
     {
         x = -1;
         y = -1;
@@ -47,7 +48,7 @@ struct Keypoint
         orientation = 0;
     }
 
-    Keypoint(int x, int y, float score)
+    KeyPoint(int x, int y, float score)
     {
         this->x = x;
         this->y = y;
@@ -55,7 +56,7 @@ struct Keypoint
         this->orientation = 0;
     }
 
-    Keypoint(int x, int y, float score, float orientation)
+    KeyPoint(int x, int y, float score, float orientation)
     {
         this->x = x;
         this->y = y;
@@ -63,7 +64,7 @@ struct Keypoint
         this->orientation = orientation;
     }
 
-    Keypoint(int x, int y)
+    KeyPoint(int x, int y)
     {
         this->x = x;
         this->y = y;
@@ -71,7 +72,7 @@ struct Keypoint
         this->orientation = 0;
     }
 
-    bool operator<(const Keypoint& kp) const { return score < kp.score; }
+    bool operator<(const KeyPoint& kp) const { return score < kp.score; }
 };
 
 struct ScalePyramid
@@ -83,13 +84,13 @@ class FeatureExtractor
 {
   protected:
     std::vector<FeatureDescriptor> features;
-    std::vector<Keypoint> keypoints;
+    std::vector<KeyPoint> keypoints;
     Frame* annotated_frame;
     bool non_max_suppression;
     bool annotate;
 
   public:
-    virtual std::vector<Keypoint> Extract(const Frame* frame) = 0;
+    virtual std::vector<KeyPoint> Extract(const Frame* frame) = 0;
     virtual Frame* GetAnnotatedFrame() = 0;
 };
 }

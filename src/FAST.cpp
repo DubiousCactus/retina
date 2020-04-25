@@ -1,13 +1,14 @@
 /*
  * FAST.cpp
- * Copyright (C) 2019 transpalette <transpalette@arch-cactus>
- *
+ * Copyright (C) 2019-2020 Théo Morales <theo.morales.fr@gmail.com>
  * Distributed under terms of the MIT license.
  */
 
 #include "FAST.h"
 
-namespace arlite {
+#include <cmath>
+
+namespace retina {
 FASTExtractor::FASTExtractor(unsigned int margin,
                              unsigned short radius,
                              unsigned short intensity_threshold,
@@ -75,9 +76,9 @@ FASTExtractor::BresenhamCircle(const Pixel center,
     /* Remove duplicates  and reorder */
     std::vector<Pixel*> circle;
     circle.reserve(radius * 8);
-    for (auto p = circlePixels.begin(); p != circlePixels.end(); p++) {
-        if (std::find_if(circle.begin(), circle.end(), *(*p)) == circle.end())
-            circle.push_back(*p);
+    for (auto & circlePixel : circlePixels) {
+        if (std::find_if(circle.begin(), circle.end(), *circlePixel) == circle.end())
+            circle.push_back(circlePixel);
     }
 
     // TODO: Optimize and refactor
@@ -134,6 +135,8 @@ FASTExtractor::BresenhamCircle(const Pixel center,
                         search = false;
                     }
                     break;
+                default:
+                    break;
             }
         }
     }
@@ -187,7 +190,7 @@ static void ICAngles(const Mat& img, const std::vector<Rect>& layerinfo,
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     */
-    float orientation, m01, m10;
+    float theta, m01, m10;
     m01 = m10 = 0;
     for (int y = cy - radius; y <= cy + radius; ++y) {
         for (int x = cx - radius; x <= cx + radius; ++x) {
@@ -199,8 +202,8 @@ static void ICAngles(const Mat& img, const std::vector<Rect>& layerinfo,
             }
         }
     }
-    orientation = atan2(m01, m10);
-    return orientation;
+    theta = std::atan2(m01, m10);
+    return theta;
 }
 
 /* Extract N keypoints in the given frame, using the Features from
@@ -208,7 +211,7 @@ static void ICAngles(const Mat& img, const std::vector<Rect>& layerinfo,
  * (threshold)
  */
 // TODO: Work on the image matrix directly
-std::vector<Keypoint>
+std::vector<KeyPoint>
 FASTExtractor::Extract(const Frame* f)
 {
     // TODO: Implement the paper "Machine Learning a Corner Detector"
@@ -226,11 +229,11 @@ FASTExtractor::Extract(const Frame* f)
      */
     int Ip, upperBound, lowerBound, score;
     bool allAbove, allBelow, corner, brighter, darker;
-    this->annotated_frame = annotate ? new Frame(*f) : NULL;
+    this->annotated_frame = annotate ? new Frame(*f) : nullptr;
     Matrix<int> fastResponse(f->Height(), f->Width());
     Matrix<double> imgMatrix = f->GetDoubleMatrix();
-    for (int y = this->margin; y < (f->Height() - this->margin); y++) {
-        for (int x = this->margin; x < (f->Width() - this->margin); x++) {
+    for (unsigned int y = this->margin; y < (f->Height() - this->margin); y++) {
+        for (unsigned int x = this->margin; x < (f->Width() - this->margin); x++) {
             Ip = f->RawAt(x, y);
             Pixel center(x, y);
             center.intensity = Ip;
@@ -260,10 +263,10 @@ FASTExtractor::Extract(const Frame* f)
                                                     f->RawAt(x - 3, y),
                                                     f->RawAt(x + 3, y) };
                 allAbove = true, allBelow = true;
-                for (auto p = testPixels.begin(); p != testPixels.end(); p++) {
-                    if (*p <= upperBound)
+                for (unsigned char & testPixel : testPixels) {
+                    if (testPixel <= upperBound)
                         allAbove = false;
-                    if (*p >= lowerBound)
+                    if (testPixel >= lowerBound)
                         allBelow = false;
                 }
 
@@ -291,10 +294,8 @@ FASTExtractor::Extract(const Frame* f)
                       GetPixelWithOverflow(circle, i + j));
 
                 brighter = true, darker = true;
-                for (auto p = contiguousPixels.begin();
-                     p != contiguousPixels.end();
-                     p++) {
-                    if ((*p)->intensity <= upperBound) {
+                for (auto & contiguousPixel : contiguousPixels) {
+                    if (contiguousPixel->intensity <= upperBound) {
                         brighter = false;
                         break;
                     }
@@ -305,10 +306,8 @@ FASTExtractor::Extract(const Frame* f)
                     break;
                 }
 
-                for (auto p = contiguousPixels.begin();
-                     p != contiguousPixels.end();
-                     p++) {
-                    if ((*p)->intensity >= lowerBound) {
+                for (auto & contiguousPixel : contiguousPixels) {
+                    if (contiguousPixel->intensity >= lowerBound) {
                         darker = false;
                         break;
                     }
@@ -333,8 +332,7 @@ FASTExtractor::Extract(const Frame* f)
                         patchOrientation =
                           this->PatchOrientation(imgMatrix, x, y);
                     }
-                    this->keypoints.push_back(
-                      Keypoint(x, y, score, patchOrientation));
+                    this->keypoints.emplace_back(x, y, score, patchOrientation);
                 } else {
                     *fastResponse(y, x) = score;
                 }
@@ -358,7 +356,7 @@ void
 FASTExtractor::NonMaxSuppression(const Matrix<double>& imgMatrix,
                                  Matrix<int>& fastResponse)
 {
-    std::vector<Keypoint> suppressed;
+    std::vector<KeyPoint> suppressed;
     // TODO: Verify that this works as intended (no duplicates)
     // I feel like it removes way too much...
     for (int y = 1; y < fastResponse.Rows(); ++y) {
@@ -388,8 +386,7 @@ FASTExtractor::NonMaxSuppression(const Matrix<double>& imgMatrix,
                 if (orientation) {
                     patchOrientation = this->PatchOrientation(imgMatrix, x, y);
                 }
-                suppressed.push_back(
-                  Keypoint(x, y, *fastResponse(y, x), patchOrientation));
+                suppressed.emplace_back(x, y, *fastResponse(y, x), patchOrientation);
             }
         }
     }

@@ -6,7 +6,7 @@
 #include <iostream>
 #include <vector>
 #include "CImg.h"
-#include "arlite.h"
+#include "retina.h"
 
 using namespace cimg_library;
 
@@ -15,7 +15,7 @@ void debug()
     CImg<uint8_t> image("../desk_2.jpg");
     CImg<uint8_t> resizedImage(300, 225);
 
-    uint8_t **data = new uint8_t *[image.height()];
+    auto **data = new uint8_t *[image.height()];
     for (int y = 0; y < image.height(); y++) {
         data[y] = new uint8_t [image.width()];
         for (int x = 0; x < image.width(); x++) {
@@ -24,10 +24,10 @@ void debug()
         }
     }
 
-    arlite::Frame* frame = new arlite::Frame(data, image.width(), image.height());
+    auto* frame = new retina::Frame(data, image.width(), image.height());
     std::cout << "[*] Downscaling..." << std::endl;
-    auto frame_small = arlite::Matrix<int>::Resize(
-            frame->GetIntMatrix(), 225, 300, arlite::InterpolationMethod::INTER_AREA);
+    auto frame_small = retina::Matrix<int>::Resize(
+            frame->GetIntMatrix(), 225, 300, retina::InterpolationMethod::INTER_AREA);
     std::cout << "[*] Done!" << std::endl;
 
     for (int y = 0; y < resizedImage.height(); y++) {

@@ -1,7 +1,6 @@
 /*
  * ORB.h
- * Copyright (C) 2019 transpalette <transpalette@arch-cactus>
- *
+ * Copyright (C) 2019-2020 Théo Morales <theo.morales.fr@gmail.com>
  * Distributed under terms of the MIT license.
  */
 
@@ -13,7 +12,7 @@
 #include "FeatureExtractor.h"
 #include "Harris.h"
 
-namespace arlite {
+namespace retina {
 class ORBExtractor : FeatureExtractor
 {
   private:
@@ -27,10 +26,10 @@ class ORBExtractor : FeatureExtractor
     BRIEFDescriptor brief_descriptor;
 
   public:
-    ORBExtractor(size_t n_keypoints);
-    std::vector<Keypoint> GetKeypoints();
-    std::vector<Keypoint> Extract(const Frame* frame);
-    Frame* GetAnnotatedFrame();
+    explicit ORBExtractor(size_t n_keypoints);
+    std::vector<KeyPoint> GetKeypoints();
+    std::vector<KeyPoint> Extract(const Frame* frame) override;
+    Frame* GetAnnotatedFrame() override;
 };
 }
 

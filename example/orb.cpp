@@ -1,7 +1,6 @@
 /*
  * main.cpp
- * Copyright (C) 2019 transpalette <transpalette@arch-cactus>
- *
+ * Copyright (C) 2019-2020 Théo Morales <theo.morales.fr@gmail.com>
  * Distributed under terms of the MIT license.
  *
  * This is an example of usage for this library.
@@ -295,10 +294,10 @@ void video()
         f = streamParser.NextFrame();
         if (!f)
             break;
-        arlite::ORBExtractor extractor(*f);
+        retina::ORBExtractor extractor(*f);
         extractor.Extract();
     } while (f);
-    //arlite::Frame *f = streamParser.NextFrame();
+    //retina::Frame *f = streamParser.NextFrame();
     if (!f) {
         std::cerr << "Empty frame!" << std::endl;
         exit(1);

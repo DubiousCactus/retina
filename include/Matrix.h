@@ -14,7 +14,7 @@
 #include <cstddef>
 #include <iostream>
 
-namespace arlite {
+namespace retina {
 
 enum InterpolationMethod
 {
@@ -30,12 +30,12 @@ class Matrix
 {
 private:
   T** data;
-  int rows;
-  int cols;
+  int rows{};
+  int cols{};
 
 public:
   template<size_t n_rows, size_t n_cols>
-  Matrix(T (&data)[n_rows][n_cols])
+  explicit Matrix(T (&data)[n_rows][n_cols])
   {
     T** data_p = new T*[n_rows];
     for (size_t i = 0; i < n_rows; i++) {
@@ -50,7 +50,7 @@ public:
   Matrix(const Matrix& m);
   ~Matrix();
   Matrix& operator=(Matrix m);
-  Matrix operator*(const Matrix m);
+  Matrix operator*(Matrix m);
   T* operator()(int m, int n) const;
   T* At(int m, int n) const;
   Matrix Transposed() const;
@@ -66,11 +66,11 @@ public:
                        unsigned int mCols,
                        InterpolationMethod interpolation);
   static T
-  Sum(const Matrix<T>& m, const int row, const int col, const int windowSize);
+  Sum(const Matrix<T>& m, int row, int col, int windowSize);
   // Hadamard product of two matrices of the same size
   static Matrix ElementWiseProduct(const Matrix& m1, const Matrix& m2);
-  static constexpr Matrix MakeGaussianKernel(const int radius);
-  static constexpr Matrix MakeGaussianKernel(const int sigma, const int size);
+  static constexpr Matrix MakeGaussianKernel(int radius);
+  static constexpr Matrix MakeGaussianKernel(int sigma, int size);
 };
 
 template<class T>
@@ -269,21 +269,19 @@ Matrix<T>::Resize(const Matrix<T>& m,
                   InterpolationMethod interpolation)
 {
   // TODO: Move to Frame?
-  std::cout << "Resizing" << std::endl;
   Matrix<T> resized(mRows, mCols);
   float ystep, xstep, area;
   // TODO: Handle float values for xstep and ystep
   ystep = m.Cols() / mCols;
   xstep = m.Rows() / mRows;
   area = ystep * xstep;
-  std::cout << "xstep: " << xstep << ", ystep: " << ystep << std::endl;
   if (mRows < m.Rows() || mCols < m.Cols()) {
     if (interpolation == InterpolationMethod::INTER_AREA) {
       for (int j = 0; j < (resized.Rows() - ystep); j++) {
         for (int i = 0; i < (resized.Cols() - xstep); i++) {
           for (int k = 0; k < (ystep - 1); k++) {
             for (int l = 0; l < (xstep - 1); l++) {
-              *resized(j, i) += *m((ystep*j)+k, (xstep*i)+l);
+              *resized(j, i) += *m(ystep * j + k, xstep * i + l);
             }
           }
           *resized(j, i) /= area;

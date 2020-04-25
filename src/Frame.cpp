@@ -1,13 +1,12 @@
 /*
  * Frame.cpp
- * Copyright (C) 2019 transpalette <transpalette@arch-cactus>
- *
+ * Copyright (C) 2019-2020 Théo Morales <theo.morales.fr@gmail.com>
  * Distributed under terms of the MIT license.
  */
 
 #include "Frame.h"
 
-namespace arlite {
+namespace retina {
 Frame::Frame(uint8_t** data, int width, int height)
 {
     this->data = data;
@@ -138,7 +137,7 @@ Frame::Height() const
     return this->height;
 }
 
-Frame Frame::operator*(const Frame f) const
+Frame Frame::operator*(const Frame& f) const
 {
     assert(f.Width() == this->width);
     assert(f.Height() == this->height);

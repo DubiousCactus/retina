@@ -13,12 +13,12 @@
 #include <cstdint>
 #include <iostream>
 
-namespace arlite {
+namespace retina {
 /* TODO: Remove the Pixel structure, it's garbage */
 struct Pixel
 {
-    int x;
-    int y;
+    int x{};
+    int y{};
     unsigned char intensity;
 
     Pixel(int x, int y)
@@ -70,7 +70,7 @@ class Frame
     Matrix<int> GetIntMatrix(int x, int y, int patch_size) const;
     Matrix<double> GetDoubleMatrix() const;
     Matrix<double> GetDoubleMatrix(int x, int y, int patch_size) const;
-    Frame operator*(const Frame f) const;
+    Frame operator*(const Frame& f) const;
 };
 }
 

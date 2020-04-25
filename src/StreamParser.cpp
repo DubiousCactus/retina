@@ -1,13 +1,12 @@
 /*
  * StreamParser.cpp
- * Copyright (C) 2019 transpalette <transpalette@arch-cactus>
- *
+ * Copyright (C) 2019-2020 Théo Morales <theo.morales.fr@gmail.com>
  * Distributed under terms of the MIT license.
  */
 
 #include "StreamParser.h"
 
-namespace arlite {
+namespace retina {
 uint8_t*
 StreamParser::GetRGBPixel(int x, int y)
 {
@@ -21,7 +20,7 @@ StreamParser::GetRGBPixel(int x, int y)
     const unsigned char v =
       this->frame->data[2][this->frame->linesize[2] * y + x];
 
-    uint8_t* pixel = new uint8_t[3];
+    auto* pixel = new uint8_t[3];
     pixel[0] = _y + 1.402 * (v - 128);                     // R
     pixel[1] = _y - 0.344 * (u - 128) - 0.714 * (v - 128); // G
     pixel[2] = _y + 1.772 * (u - 128);                     // B
@@ -57,15 +56,15 @@ StreamParser::Decode()
             exit(1);
         }
 
-        uint8_t** data = new uint8_t*[frame->height];
+        auto** buff = new uint8_t*[frame->height];
         for (int i = 0; i < frame->height; i++) {
-            data[i] = new uint8_t[frame->width];
+            buff[i] = new uint8_t[frame->width];
             for (int j = 0; j < frame->width; j++) {
-                data[i][j] = this->GetGrayscalePixel(j, i);
+                buff[i][j] = this->GetGrayscalePixel(j, i);
             }
         }
 
-        return new Frame(data, frame->width, frame->height);
+        return new Frame(buff, frame->width, frame->height);
     }
 
     return nullptr;

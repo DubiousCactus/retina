@@ -1,13 +1,12 @@
 /*
  * Harris.cpp
- * Copyright (C) 2019 transpalette <transpalette@arch-cactus>
- *
+ * Copyright (C) 2019-2020 Théo Morales <theo.morales.fr@gmail.com>
  * Distributed under terms of the MIT license.
  */
 
 #include "Harris.h"
 
-namespace arlite {
+namespace retina {
 HarrisExtractor::HarrisExtractor(bool smoothing,
                                  bool non_max_suppression,
                                  bool annotate)
@@ -20,7 +19,7 @@ HarrisExtractor::HarrisExtractor(bool smoothing,
 }
 
 /* Extracts keypoints in image f using the Harris corner measure */
-std::vector<Keypoint>
+std::vector<KeyPoint>
 HarrisExtractor::Extract(const Frame* frame)
 {
     int offset = this->window_size / 2;
@@ -28,7 +27,7 @@ HarrisExtractor::Extract(const Frame* frame)
     double det, trace, r, threshold;
     double sX[3][3] = { { -1, 0, 1 }, { -2, 0, 2 }, { -1, 0, 1 } };
     double sY[3][3] = { { -1, -2, -1 }, { 0, 0, 0 }, { 1, 2, 1 } };
-    this->annotated_frame = annotate ? new Frame(*frame) : NULL;
+    this->annotated_frame = annotate ? new Frame(*frame) : nullptr;
     Matrix<double> sobelX(sX);
     Matrix<double> sobelY(sY);
     Matrix<double> gaussianKernel = Matrix<double>::MakeGaussianKernel(3);
@@ -58,7 +57,7 @@ HarrisExtractor::Extract(const Frame* frame)
         }
     }
     threshold /= img.Rows() * img.Cols();
-    threshold = abs(0.1 * threshold); // TODO: Set class property
+    threshold = std::abs(0.1 * threshold); // TODO: Set class property
 
     if (non_max_suppression) {
         this->NonMaxSuppression(6, harrisResponse);
@@ -69,8 +68,7 @@ HarrisExtractor::Extract(const Frame* frame)
             if (*harrisResponse(i, j) > threshold &&
                 (i > 5 && i < frame->Height() - 5) &&
                 (j > 5 && j < frame->Width() - 5)) {
-                this->keypoints.push_back(
-                  Keypoint(j, i, *harrisResponse(i, j)));
+                this->keypoints.emplace_back(j, i, *harrisResponse(i, j));
             }
         }
     }
@@ -171,7 +169,7 @@ HarrisExtractor::GetAnnotatedFrame()
     return this->annotated_frame;
 }
 
-std::vector<Keypoint>
+std::vector<KeyPoint>
 HarrisExtractor::GetKeypoints()
 {
     return this->keypoints;

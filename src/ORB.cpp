@@ -1,7 +1,6 @@
 /*
  * ORB.cpp
- * Copyright (C) 2019 transpalette <transpalette@arch-cactus>
- *
+ * Copyright (C) 2019-2020 Théo Morales <theo.morales.fr@gmail.com>
  * Distributed under terms of the MIT license.
  */
 
@@ -11,13 +10,11 @@
 #include <cmath>
 #include <random>
 
-namespace arlite {
+namespace retina {
 /* Build a scale pyramid of the base image */
 ScalePyramid
 ORBExtractor::BuildPyramid()
 {
-  // TODO: In the paper they use "area-based interpolation for efficient
-  // decimation".
   ScalePyramid pyramid;
   /*for (unsigned short i = 0; i < this->pog_levels; i++)
       pyramid.scales.push_back(this->frame);*/
@@ -32,10 +29,10 @@ ORBExtractor::ORBExtractor(size_t n_keypoints)
 {
   this->n_keypoints = n_keypoints;
   this->pog_levels = 5;
-  this->scaling_factor = sqrt(2);
+  this->scaling_factor = std::sqrt(2);
 }
 
-std::vector<Keypoint>
+std::vector<KeyPoint>
 ORBExtractor::Extract(const Frame* frame)
 {
   /*
@@ -110,7 +107,7 @@ ORBExtractor::Extract(const Frame* frame)
   this->annotated_frame = new Frame(*frame);
   // STEP 2: for each level of the PoG
   /*for (unsigned short i = 0; i < this->pog_levels; i++) {
-    std::vector<Keypoint> keypoints = this->HarrisFilter(
+    std::vector<KeyPoint> keypoints = this->HarrisFilter(
     this->FAST(pyramid.scales.at(i)));
     }*/
 
@@ -151,7 +148,7 @@ ORBExtractor::GetAnnotatedFrame()
   return annotated_frame;
 }
 
-std::vector<Keypoint>
+std::vector<KeyPoint>
 ORBExtractor::GetKeypoints()
 {
   return this->keypoints;

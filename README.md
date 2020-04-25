@@ -1,4 +1,4 @@
-# Standalone AR framework for learning purposes, with minimal dependencies
+# Minimal dependency Computer Vision & Image Processing library for learning purposes
 
 ## TODO
 
@@ -11,15 +11,8 @@
     - [x] steered BRIEF
     - [x] rBRIEF
 - [ ] ORB
+    - [ ] Scale pyramid
     - [ ] Learning Good Binary Features
-
-### Target surface recognition
-
-### Homography estimation
-
-### Derive projection
-
-### Model projection
 
 
 ## Literature and documentation
@@ -39,6 +32,5 @@ vision methods and algorithms used in the building of this project:
 
 ### Articles & websites
 
-- https://bitesofcode.wordpress.com/2017/09/12/augmented-reality-with-python-and-opencv-part-1/
 - https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_feature2d/py_orb/py_orb.html
 - https://github.com/opencv/opencv

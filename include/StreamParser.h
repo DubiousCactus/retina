@@ -23,7 +23,7 @@ extern "C"
 
 #define INBUF_SIZE 4096
 
-namespace arlite {
+namespace retina {
 class StreamParser
 {
   private:
@@ -41,7 +41,7 @@ class StreamParser
 
   public:
     /* MPEG-1 codec */
-    StreamParser(std::string file_path);
+    explicit StreamParser(std::string file_path);
     ~StreamParser();
     Frame* NextFrame();
 };

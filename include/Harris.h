@@ -1,7 +1,6 @@
 /*
  * Harris.h
- * Copyright (C) 2019 transpalette <transpalette@arch-cactus>
- *
+ * Copyright (C) 2019-2020 Théo Morales <theo.morales.fr@gmail.com>
  * Distributed under terms of the MIT license.
  */
 
@@ -11,7 +10,7 @@
 #include "FeatureExtractor.h"
 #include "Frame.h"
 
-namespace arlite {
+namespace retina {
 class HarrisExtractor : FeatureExtractor
 {
   private:
@@ -23,7 +22,7 @@ class HarrisExtractor : FeatureExtractor
   public:
     HarrisExtractor(bool smoothing, bool non_max_suppression, bool annotate);
     /* Extracts keypoints in image f using the Harris corner measure */
-    std::vector<Keypoint> Extract(const Frame* f);
+    std::vector<KeyPoint> Extract(const Frame* f) override;
     /* Computes the Harris corner response of pixel <x,y> in image f,
      * within a patch of block_size*block_size
      */
@@ -31,8 +30,8 @@ class HarrisExtractor : FeatureExtractor
     /* Returns an image as a copy of the extracted frame, with keypoint
      * annotations.
      */
-    Frame* GetAnnotatedFrame();
-    std::vector<Keypoint> GetKeypoints();
+    Frame* GetAnnotatedFrame() override;
+    std::vector<KeyPoint> GetKeypoints();
 };
 }
 

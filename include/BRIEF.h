@@ -1,7 +1,6 @@
 /*
  * BRIEF.h
- * Copyright (C) 2019 transpalette <transpalette@arch-cactus>
- *
+ * Copyright (C) 2019-2020 Théo Morales <theo.morales.fr@gmail.com>
  * Distributed under terms of the MIT license.
  */
 
@@ -14,7 +13,7 @@
 #include "FeatureExtractor.h"
 #include "Matrix.h"
 
-namespace arlite {
+namespace retina {
 enum SamplingGeometry
 {
     UNIFORM,
@@ -36,7 +35,7 @@ class BRIEFDescriptor
   public:
     BRIEFDescriptor(int size, int patchSize, SamplingGeometry samplingGeometry, bool steer);
     std::vector<FeatureDescriptor>
-    Run(Matrix<double>& img, std::vector<Keypoint> keypoints);
+    Run(Matrix<double>& img, std::vector<KeyPoint> keypoints);
 };
 }
 
