@@ -10,20 +10,10 @@ namespace retina {
 uint8_t*
 StreamParser::GetRGBPixel(int x, int y)
 {
-    const unsigned char _y =
-      this->frame->data[0][this->frame->linesize[0] * y + x];
-
-    x /= 2;
-    y /= 2;
-    const unsigned char u =
-      this->frame->data[1][this->frame->linesize[1] * y + x];
-    const unsigned char v =
-      this->frame->data[2][this->frame->linesize[2] * y + x];
-
-    auto* pixel = new uint8_t[3];
-    pixel[0] = _y + 1.402 * (v - 128);                     // R
-    pixel[1] = _y - 0.344 * (u - 128) - 0.714 * (v - 128); // G
-    pixel[2] = _y + 1.772 * (u - 128);                     // B
+    auto *pixel = new uint8_t[3];
+    pixel[0] = *(this->rgbFrame->data[0] + y * this->rgbFrame->linesize[0] + (x*3));
+    pixel[1] = *(this->rgbFrame->data[0] + y * this->rgbFrame->linesize[0] + (x*3) + 1);
+    pixel[2] = *(this->rgbFrame->data[0] + y * this->rgbFrame->linesize[0] + (x*3) + 2);
 
     return pixel;
 }
@@ -36,122 +26,125 @@ StreamParser::GetGrayscalePixel(int x, int y)
     return 0.33 * rgb[0] + 0.33 * rgb[1] + 0.33 * rgb[2];
 }
 
-Frame*
-StreamParser::Decode()
-{
-    int ret;
 
-    ret = avcodec_send_packet(this->context, this->pkt);
-    if (ret < 0) {
-        std::cerr << "Error sending a packet for decoding" << std::endl;
-        exit(1);
-    }
-
-    while (ret >= 0) {
-        ret = avcodec_receive_frame(this->context, this->frame);
-        if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
-            return nullptr;
-        else if (ret < 0) {
-            std::cerr << "Error during decoding" << std::endl;
-            exit(1);
-        }
-
-        auto** buff = new uint8_t*[frame->height];
-        for (int i = 0; i < frame->height; i++) {
-            buff[i] = new uint8_t[frame->width];
-            for (int j = 0; j < frame->width; j++) {
-                buff[i][j] = this->GetGrayscalePixel(j, i);
-            }
-        }
-
-        return new Frame(buff, frame->width, frame->height);
-    }
-
-    return nullptr;
-}
-
-/* MPEG-1 codec */
 StreamParser::StreamParser(std::string file_path)
 {
-    this->file =
-      std::ifstream(file_path, std::ifstream::in | std::ifstream::binary);
-    if (!file.is_open()) {
-        std::cerr << "Could not open " << file_path << std::endl;
+    // Check the file header and store it in the format context
+    if (avformat_open_input(&this->fmtContext, file_path.c_str(), nullptr, nullptr) != 0) {
+        std::cerr << "[!] Could not open the file " << file_path << " !" << std::endl;
         exit(1);
     }
 
-    this->pkt = av_packet_alloc();
-    assert(this->pkt);
+    // Check the stream information
+    if (avformat_find_stream_info(this->fmtContext, nullptr) != 0) {
+        std::cerr << "[!] Could not read stream info !" << std::endl;
+        exit(1);
+    }
 
-    /* set end of buffer to 0 (this ensures that no overreading
-     * happens for damaged MPEG streams)
-     */
-    memset(this->inbuf + INBUF_SIZE, 0, AV_INPUT_BUFFER_PADDING_SIZE);
+    av_dump_format(this->fmtContext, 0, file_path.c_str(), 0);
+    for (int i = 0; i < this->fmtContext->nb_streams; ++i) {
+        if (this->fmtContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
+            this->videoStreamIdx = i;
+            break;
+        }
+    }
 
-    const AVCodec* codec = avcodec_find_decoder(AV_CODEC_ID_MPEG1VIDEO);
-    assert(codec);
-    this->parser = av_parser_init(codec->id);
-    assert(this->parser);
-    this->context = avcodec_alloc_context3(codec);
-    assert(this->context);
-    /* For some codecs, such as msmpeg4 and mpeg4, width and height
-     * MUST be initialized there because this information is not
-     * available in the bitstream.
-     */
-    if (avcodec_open2(context, codec, NULL) < 0) {
-        std::cerr << "Could not open codec" << std::endl;
+    if (this->videoStreamIdx == -1) {
+        std::cerr << "[!] Could not find a video stream!" << std::endl;
+        exit(1);
+    }
+
+    AVCodecContext *codecContextOrg = this->fmtContext->streams[this->videoStreamIdx]->codec;
+
+    // Find the decoder for the video stream
+    this->codec = avcodec_find_decoder(codecContextOrg->codec_id);
+    if (this->codec == nullptr) {
+        std::cerr << "[!] Could not find a decoder for the codec!" << std::endl;
+        exit(1);
+    }
+
+    // Copy the context, because we must not use the codec from the stream directly
+    this->codecContext = avcodec_alloc_context3(this->codec);
+    if (avcodec_copy_context(this->codecContext, codecContextOrg) != 0) {
+        std::cerr << "[!] Could not copy the codec context!" << std::endl;
+        exit(1);
+    }
+
+    if (avcodec_open2(this->codecContext, this->codec, nullptr) < 0) {
+        std::cerr << "[!] Could not open the codec!" << std::endl;
         exit(1);
     }
 
     this->frame = av_frame_alloc();
-    assert(frame);
+    this->rgbFrame = av_frame_alloc();
+    if (this->frame == nullptr || this->rgbFrame == nullptr) {
+        std::cerr << "[!] Could not allocate frames!" << std::endl;
+        exit(1);
+    }
+
+    int nBytes = avpicture_get_size(AV_PIX_FMT_RGB24, this->codecContext->width, this->codecContext->height);
+    this->buffer = (uint8_t *) av_malloc(nBytes * sizeof(uint8_t));
+
+    // Assign appropriate parts of buffer to image planes in rgbFrame, which is an AVFrame,
+    // a superset of AVPicture.
+    avpicture_fill((AVPicture *)this->rgbFrame, this->buffer, AV_PIX_FMT_RGB24,
+            this->codecContext->width, this->codecContext->height);
+
+    this->sws_ctx = sws_getContext(this->codecContext->width,
+                             this->codecContext->height,
+                             this->codecContext->pix_fmt,
+                             this->codecContext->width,
+                             this->codecContext->height,
+                             AV_PIX_FMT_RGB24,
+                             SWS_BILINEAR, nullptr, nullptr, nullptr);
 }
 
 StreamParser::~StreamParser()
 {
-    this->file.close();
-    av_parser_close(this->parser);
-    avcodec_free_context(&this->context);
     av_frame_free(&this->frame);
-    av_packet_free(&this->pkt);
+    av_frame_free(&this->rgbFrame);
+    sws_freeContext(this->sws_ctx);
+    av_free(&this->buffer);
+    avcodec_close(this->codecContext);
+    avformat_close_input(&this->fmtContext);
+    avformat_free_context(this->fmtContext);
+    avcodec_free_context(&this->codecContext);
 }
 
 Frame*
 StreamParser::NextFrame()
 {
-    Frame* f;
-    size_t bytes_read;
-    int ret;
-
-    if (this->file.eof()) {
+    Frame* f = nullptr;
+    AVPacket packet;
+    int frameFinished = 0;
+    if (av_read_frame(this->fmtContext, &packet) < 0) {
+        av_free_packet(&packet);
         return nullptr;
     }
-    this->file.read((char*)(&this->inbuf[0]), INBUF_SIZE);
 
-    f = nullptr;
-    /* Split the data into frames */
-    this->data = this->inbuf;
-    bytes_read = file.gcount();
-    while (bytes_read > 0) {
-        ret = av_parser_parse2(this->parser,
-                               this->context,
-                               &this->pkt->data,
-                               &this->pkt->size,
-                               this->data,
-                               bytes_read,
-                               AV_NOPTS_VALUE,
-                               AV_NOPTS_VALUE,
-                               0);
-        if (ret < 0) {
-            std::cerr << "Error while parsing" << std::endl;
-            exit(1);
+
+    while (!frameFinished) {
+        if (packet.stream_index == this->videoStreamIdx) {
+            avcodec_decode_video2(this->codecContext, this->frame, &frameFinished, &packet);
+            if (frameFinished) {
+                // Convert the frame from its original format to an RGB frame
+                sws_scale(sws_ctx, (uint8_t const * const *) this->frame->data,
+                          this->frame->linesize, 0, this->codecContext->height,
+                          this->rgbFrame->data, this->rgbFrame->linesize);
+                auto** buff = new uint8_t*[this->codecContext->height];
+                for (int i = 0; i < this->codecContext->height; i++) {
+                    buff[i] = new uint8_t[this->codecContext->width];
+                    for (int j = 0; j < this->codecContext->width; j++) {
+                        buff[i][j] = this->GetGrayscalePixel(j, i);
+                    }
+                }
+
+                f = new Frame(buff, this->codecContext->width, this->codecContext->height);
+            }
         }
-        this->data += ret;
-        bytes_read -= ret;
-
-        if (this->pkt->size)
-            f = this->Decode();
     }
+
+    av_free_packet(&packet);
 
     return f;
 }

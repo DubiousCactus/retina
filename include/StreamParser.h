@@ -17,6 +17,8 @@
 extern "C"
 {
 #include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libswscale/swscale.h>
 }
 
 #include "Frame.h"
@@ -27,20 +29,18 @@ namespace retina {
 class StreamParser
 {
   private:
-    AVCodecParserContext* parser;
-    AVCodecContext* context{ NULL };
-    AVFrame* frame;
-    AVPacket* pkt;
-    std::ifstream file;
-    uint8_t inbuf[INBUF_SIZE + AV_INPUT_BUFFER_PADDING_SIZE];
-    uint8_t* data;
+    struct SwsContext *sws_ctx = nullptr;
+    AVCodecContext* codecContext{ nullptr };
+    AVFormatContext* fmtContext{ nullptr };
+    AVCodec* codec { nullptr };
+    AVFrame* frame { nullptr }, *rgbFrame { nullptr };
+    uint8_t* buffer {nullptr};
+    int videoStreamIdx { -1 };
 
     uint8_t* GetRGBPixel(int x, int y);
     uint8_t GetGrayscalePixel(int x, int y);
-    Frame* Decode();
 
   public:
-    /* MPEG-1 codec */
     explicit StreamParser(std::string file_path);
     ~StreamParser();
     Frame* NextFrame();

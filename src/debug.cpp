@@ -45,9 +45,55 @@ void debug()
     }
 }
 
+void video()
+{
+    retina::StreamParser streamParser("desk.mpg");
+    retina::Frame *f = nullptr;
+    int i = 0;
+    f = streamParser.NextFrame();
+    if (f == nullptr) {
+        std::cerr << "[!] Could not parse the next frame!" << std::endl;
+        exit(1);
+    }
+    std::cout << "[*] Extracting features..." << std::endl;
+//    while(i++ < 10)
+//        f = streamParser.NextFrame();
+//    retina::ORBExtractor extractor(500);
+//    extractor.Extract(f);
+    /*do {
+        std::cout << "Frame no " << i++ << std::endl;
+        f = streamParser.NextFrame();
+        if (!f)
+            break;
+        retina::ORBExtractor extractor(*f);
+        extractor.Extract();
+    } while (f);
+    //retina::Frame *f = streamParser.NextFrame();
+    if (!f) {
+        std::cerr << "Empty frame!" << std::endl;
+        exit(1);
+    }*/
+//    std::vector<retina::KeyPoint> keypoints = extractor.GetKeypoints();
+//    std::cout << "[*] Keypoints extracted: " << keypoints.size() << std::endl;
+
+//    retina::Frame* annotated = extractor.GetAnnotatedFrame();
+    retina::Frame* annotated = f;
+    CImg<uint8_t> annotatedImage(annotated->Width(), annotated->Height(), 1, 1, 0);
+
+    for (int y = 0; y < annotated->Height(); y++)
+        for (int x = 0; x < annotated->Width(); x++)
+            annotatedImage(x, y, 0, 0) = annotated->RawAt(x, y);
+
+    CImgDisplay annotatedDisp(annotatedImage,"FAST keypoints");
+
+    while (!annotatedDisp.is_closed()) {
+        annotatedDisp.wait();
+    }
+}
+
 int main(int argc, char **argv)
 {
-    std::cout << "[*] Debugging ArLite" << std::endl;
-    debug();
+    std::cout << "[*] Debugging Retina" << std::endl;
+    video();
     return 0;
 }
