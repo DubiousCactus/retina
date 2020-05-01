@@ -26,22 +26,98 @@ void debug()
 
     auto* frame = new retina::Frame(data, image.width(), image.height());
     std::cout << "[*] Downscaling..." << std::endl;
-    auto frame_small = retina::Matrix<int>::Resize(
-            frame->GetIntMatrix(), 225, 300, retina::InterpolationMethod::INTER_AREA);
-    std::cout << "[*] Done!" << std::endl;
+//    auto frame_small = retina::Matrix<int>::Resize(
+//            frame, 225, 300, retina::InterpolationMethod::INTER_AREA);
+//    std::cout << "[*] Done!" << std::endl;
+//
+//    for (int y = 0; y < resizedImage.height(); y++) {
+//        for (int x = 0; x < resizedImage.width(); x++) {
+//            resizedImage(x, y, 0, 0) = frame_small(y, x);
+//            resizedImage(x, y, 0, 1) = frame_small(y, x);
+//            resizedImage(x, y, 0, 2) = frame_small(y, x);
+//        }
+//    }
+//    CImgDisplay originalFrame(image, "Original image"), resizedFrame(resizedImage, "Downscaled image");
 
-    for (int y = 0; y < resizedImage.height(); y++) {
-        for (int x = 0; x < resizedImage.width(); x++) {
-            resizedImage(x, y, 0, 0) = frame_small(y, x);
-            resizedImage(x, y, 0, 1) = frame_small(y, x);
-            resizedImage(x, y, 0, 2) = frame_small(y, x);
-        }
-    }
-    CImgDisplay originalFrame(image, "Original image"), resizedFrame(resizedImage, "Downscaled image");
+//    while (!resizedFrame.is_closed()) {
+//        resizedFrame.wait();
+//        originalFrame.wait();
+//    }
+}
 
-    while (!resizedFrame.is_closed()) {
-        resizedFrame.wait();
-        originalFrame.wait();
+void annotate(CImg<uint8_t>& image, std::vector<retina::KeyPoint> keypoints)
+{
+
+    for (auto kp : keypoints) {
+        if (kp.x -5 < 0 || kp.x + 5 >= image.width()
+            || kp.y - 5 < 0 || kp.y + 5 >= image.height())
+            continue;
+        image(kp.x-5, kp.y, 0) = 0;
+        image(kp.x-5, kp.y, 2) = 0;
+        image(kp.x-5, kp.y, 1) = 255;
+        image(kp.x-4, kp.y, 0) = 0;
+        image(kp.x-4, kp.y, 2) = 0;
+        image(kp.x-4, kp.y, 1) = 255;
+        image(kp.x-3, kp.y, 0) = 0;
+        image(kp.x-3, kp.y, 2) = 0;
+        image(kp.x-3, kp.y, 1) = 255;
+        image(kp.x-2, kp.y, 0) = 0;
+        image(kp.x-2, kp.y, 2) = 0;
+        image(kp.x-2, kp.y, 1) = 255;
+        image(kp.x-1, kp.y, 0) = 0;
+        image(kp.x-1, kp.y, 2) = 0;
+        image(kp.x-1, kp.y, 1) = 255;
+        image(kp.x, kp.y, 0) = 0;
+        image(kp.x, kp.y, 2) = 0;
+        image(kp.x, kp.y, 1) = 255;
+        image(kp.x+5, kp.y, 0) = 0;
+        image(kp.x+5, kp.y, 2) = 0;
+        image(kp.x+5, kp.y, 1) = 255;
+        image(kp.x+4, kp.y, 0) = 0;
+        image(kp.x+4, kp.y, 2) = 0;
+        image(kp.x+4, kp.y, 1) = 255;
+        image(kp.x+3, kp.y, 0) = 0;
+        image(kp.x+3, kp.y, 2) = 0;
+        image(kp.x+3, kp.y, 1) = 255;
+        image(kp.x+2, kp.y, 0) = 0;
+        image(kp.x+2, kp.y, 2) = 0;
+        image(kp.x+2, kp.y, 1) = 255;
+        image(kp.x+1, kp.y, 0) = 0;
+        image(kp.x+1, kp.y, 2) = 0;
+        image(kp.x+1, kp.y, 1) = 255;
+        image(kp.x, kp.y-5, 0) = 0;
+        image(kp.x, kp.y-5, 2) = 0;
+        image(kp.x, kp.y-5, 1) = 255;
+        image(kp.x, kp.y-4, 0) = 0;
+        image(kp.x, kp.y-4, 2) = 0;
+        image(kp.x, kp.y-4, 1) = 255;
+        image(kp.x, kp.y-3, 0) = 0;
+        image(kp.x, kp.y-3, 2) = 0;
+        image(kp.x, kp.y-3, 1) = 255;
+        image(kp.x, kp.y-2, 0) = 0;
+        image(kp.x, kp.y-2, 2) = 0;
+        image(kp.x, kp.y-2, 1) = 255;
+        image(kp.x, kp.y-1, 0) = 0;
+        image(kp.x, kp.y-1, 2) = 0;
+        image(kp.x, kp.y-1, 1) = 255;
+        image(kp.x, kp.y, 0) = 0;
+        image(kp.x, kp.y, 2) = 0;
+        image(kp.x, kp.y, 1) = 255;
+        image(kp.x, kp.y+5, 0) = 0;
+        image(kp.x, kp.y+5, 2) = 0;
+        image(kp.x, kp.y+5, 1) = 255;
+        image(kp.x, kp.y+4, 0) = 0;
+        image(kp.x, kp.y+4, 2) = 0;
+        image(kp.x, kp.y+4, 1) = 255;
+        image(kp.x, kp.y+3, 0) = 0;
+        image(kp.x, kp.y+3, 2) = 0;
+        image(kp.x, kp.y+3, 1) = 255;
+        image(kp.x, kp.y+2, 0) = 0;
+        image(kp.x, kp.y+2, 2) = 0;
+        image(kp.x, kp.y+2, 1) = 255;
+        image(kp.x, kp.y+1, 0) = 0;
+        image(kp.x, kp.y+1, 2) = 0;
+        image(kp.x, kp.y+1, 1) = 255;
     }
 }
 
@@ -60,10 +136,12 @@ void video()
         std::cout << "Frame " << i++ << std::endl;
         extractor.Extract(*f);
         std::shared_ptr<retina::Frame> annotated = extractor.GetAnnotatedFrame();
+//
+        for (int y = 0; y < f->Height(); y++)
+            for (int x = 0; x < f->Width(); x++)
+                annotatedImage(x, y, 0, 0) = (*annotated)(x, y);
 
-        for (int y = 0; y < annotated->Height(); y++)
-            for (int x = 0; x < annotated->Width(); x++)
-                annotatedImage(x, y, 0, 0) = annotated->RawAt(x, y);
+//        annotate(annotatedImage, extractor.GetKeypoints());
 
         annotatedDisp.render(annotatedImage);
         annotatedDisp.paint();

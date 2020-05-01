@@ -7,83 +7,57 @@
 #include "Frame.h"
 
 namespace retina {
-Frame::Frame(uint8_t** data, int width, int height)
-{
-    this->data = std::vector<std::vector<uint8_t>>(height, std::vector<uint8_t>(width));
-    for (int i = 0; i < height; ++i) {
-        for (int j = 0; j < width; ++j) {
-            this->data[i][j] = data[i][j];
-        }
-    }
-    this->width = width;
-    this->height = height;
-}
-
-Frame::Frame(int width, int height)
-{
-    this->data = std::vector<std::vector<uint8_t>>(height, std::vector<uint8_t>(width, 0));
-    this->width = width;
-    this->height = height;
-}
-
 Pixel
 Frame::PixelAt(unsigned int x, unsigned int y) const
 {
-    assert(x < this->width && y < this->height);
+    assert(x < this->Width() && y < this->Height());
     // TODO: Use cache
     return Pixel(x, y, this->data[y][x]);
-}
-
-uint8_t
-Frame::RawAt(unsigned int x, unsigned int y) const
-{
-    assert(x < this->width && y < this->height);
-    return this->data[y][x];
 }
 
 void
 Frame::WriteAt(unsigned int x, unsigned int y, unsigned char val)
 {
-    assert(x < this->width && y < this->height);
+    assert(x < this->Width() && y < this->Height());
     this->data[y][x] = val;
 }
 
-Matrix<int>
-Frame::GetIntMatrix() const
-{
-    Matrix<int> intMat(this->height, this->width);
-    for (int i = 0; i < this->height; ++i) {
-        for (int j = 0; j < this->width; ++j) {
-            intMat.At(i, j) = (int)this->RawAt(j, i);
-        }
-    }
-    return intMat;
-}
-
-Matrix<int>
-Frame::GetIntMatrix(int x, int y, int patch_size) const
-{
-    // TODO: Replace all assert() with exceptions!
-    int offset = patch_size / 2;
-    assert(y - offset >= 0);
-    assert(x - offset >= 0);
-    assert(y + offset < this->height);
-    assert(x + offset < this->width);
-    Matrix<int> intMat(patch_size, patch_size);
-    for (int i = -offset; i < offset; ++i) {
-        for (int j = -offset; j < offset; ++j) {
-            intMat.At(i + offset, j + offset) = (int)this->data[y + j][x + i];
-        }
-    }
-    return intMat;
-}
+//Matrix<int>
+//Frame::GetIntMatrix() const
+//{
+//    Matrix<int> intMat(this->Height(), this->Width());
+//    for (int i = 0; i < this->Height(); ++i) {
+//        for (int j = 0; j < this->Width(); ++j) {
+//            intMat.At(i, j) = (int)this(j, i);
+//        }
+//    }
+//    return intMat;
+//}
+//
+//Matrix<int>
+//Frame::GetIntMatrix(int x, int y, int patch_size) const
+//{
+//    // TODO: Replace all assert() with exceptions!
+//    int offset = patch_size / 2;
+//    assert(y - offset >= 0);
+//    assert(x - offset >= 0);
+//    assert(y + offset < this->Height());
+//    assert(x + offset < this->Width());
+//    Matrix<int> intMat(patch_size, patch_size);
+//    for (int i = -offset; i < offset; ++i) {
+//        for (int j = -offset; j < offset; ++j) {
+//            intMat.At(i + offset, j + offset) = (int)this->data[y + j][x + i];
+//        }
+//    }
+//    return intMat;
+//}
 
 Matrix<double>
 Frame::GetDoubleMatrix() const
 {
-    Matrix<double> doubleMat(this->height, this->width);
-    for (int i = 0; i < this->height; ++i) {
-        for (int j = 0; j < this->width; ++j) {
+    Matrix<double> doubleMat(this->Height(), this->Width());
+    for (int i = 0; i < this->Height(); ++i) {
+        for (int j = 0; j < this->Width(); ++j) {
             doubleMat.At(i, j) = (double)this->data[i][j];
         }
     }
@@ -97,8 +71,8 @@ Frame::GetDoubleMatrix(int x, int y, int patch_size) const
     int offset = patch_size / 2;
     assert(y - offset >= 0);
     assert(x - offset >= 0);
-    assert(y + offset < this->height);
-    assert(x + offset < this->width);
+    assert(y + offset < this->Height());
+    assert(x + offset < this->Width());
     Matrix<double> doubleMat(patch_size, patch_size);
     for (int i = -offset; i < offset; ++i) {
         for (int j = -offset; j < offset; ++j) {
@@ -109,27 +83,15 @@ Frame::GetDoubleMatrix(int x, int y, int patch_size) const
     return doubleMat;
 }
 
-unsigned int
-Frame::Width() const
-{
-    return this->width;
-}
-
-unsigned int
-Frame::Height() const
-{
-    return this->height;
-}
-
 Frame Frame::operator*(const Frame& f) const
 {
-    assert(f.Width() == this->width);
-    assert(f.Height() == this->height);
-    Frame mul(this->width, this->height);
-    for (int j = 0; j < this->height; ++j) {
-        for (int i = 0; i < this->width; ++i) {
+    assert(f.Width() == this->Width());
+    assert(f.Height() == this->Height());
+    Frame mul(this->Width(), this->Height());
+    for (int j = 0; j < this->Height(); ++j) {
+        for (int i = 0; i < this->Width(); ++i) {
             for (int k = 0; k < mul.Height(); ++k) {
-                mul.WriteAt(i, j, this->RawAt(k, j) * f.RawAt(i, k));
+                mul.WriteAt(i, j, this->operator()(k, j) * f(i, k));
             }
         }
     }

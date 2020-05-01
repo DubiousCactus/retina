@@ -235,7 +235,7 @@ FASTExtractor::Extract(const Frame& f)
     Matrix<double> imgMatrix = f.GetDoubleMatrix();
     for (unsigned int y = this->margin; y < (f.Height() - this->margin); y++) {
         for (unsigned int x = this->margin; x < (f.Width() - this->margin); x++) {
-            Ip = f.RawAt(x, y);
+            Ip = f(x, y);
             Pixel center(x, y);
             center.intensity = Ip;
 
@@ -244,25 +244,25 @@ FASTExtractor::Extract(const Frame& f)
             lowerBound = Ip - this->intensity_threshold;
             if (this->contiguous_pixels == 12) {
                 if (this->full_high_speed_test) {
-                    if ((f.RawAt(x, y - 3) <= upperBound &&
-                         f.RawAt(x, y - 3) >= lowerBound) ||
-                        (f.RawAt(x, y + 3) <= upperBound &&
-                         f.RawAt(x, y + 3) >= lowerBound)) {
+                    if ((f(x, y - 3) <= upperBound &&
+                         f(x, y - 3) >= lowerBound) ||
+                        (f(x, y + 3) <= upperBound &&
+                         f(x, y + 3) >= lowerBound)) {
                         // Cannot be a corner
                         continue;
-                    } else if ((f.RawAt(x - 3, y) <= upperBound &&
-                                f.RawAt(x - 3, y) >= lowerBound) ||
-                               (f.RawAt(x + 3, y) <= upperBound &&
-                                f.RawAt(x + 3, y) >= lowerBound)) {
+                    } else if ((f(x - 3, y) <= upperBound &&
+                                f(x - 3, y) >= lowerBound) ||
+                               (f(x + 3, y) <= upperBound &&
+                                f(x + 3, y) >= lowerBound)) {
                         // Cannot be a corner
                         continue;
                     }
                 }
                 /* At least 3 of those 4 pixels must be brighter than p */
-                std::vector<uint8_t> testPixels = { f.RawAt(x, y - 3),
-                                                    f.RawAt(x, y + 3),
-                                                    f.RawAt(x - 3, y),
-                                                    f.RawAt(x + 3, y) };
+                std::vector<uint8_t> testPixels = { f(x, y - 3),
+                                                    f(x, y + 3),
+                                                    f(x - 3, y),
+                                                    f(x + 3, y) };
                 allAbove = true, allBelow = true;
                 for (unsigned char & testPixel : testPixels) {
                     if (testPixel <= upperBound)

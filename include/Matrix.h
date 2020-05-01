@@ -28,11 +28,10 @@ enum InterpolationMethod
 template<class T>
 class Matrix
 {
-private:
+protected:
     std::vector<std::vector<T>> data;
-    int rows{};
-    int cols{};
-
+    unsigned int cols{};
+    unsigned int rows{};
 public:
   template<size_t n_rows, size_t n_cols>
   explicit Matrix(T (&data)[n_rows][n_cols])
@@ -46,14 +45,14 @@ public:
     this->rows = n_rows;
     this->cols = n_cols;
   }
-  Matrix(T** data, int rows, int cols);
-  Matrix(int rows, int cols);
+  Matrix(T** data, unsigned int rows, unsigned int cols);
+  Matrix(unsigned int rows, unsigned int cols);
   Matrix(const Matrix& m);
   ~Matrix();
   Matrix& operator=(Matrix m);
   Matrix operator*(Matrix m);
-  T operator()(int m, int n) const;
-  T& At(int m, int n);
+  T operator()(unsigned int m, unsigned int n) const;
+  T& At(unsigned int m, unsigned int n);
   Matrix Transposed() const;
   void Transpose();
   void Print() const;
@@ -67,7 +66,7 @@ public:
                        unsigned int mCols,
                        InterpolationMethod interpolation);
   static T
-  Sum(const Matrix<T>& m, int row, int col, int windowSize);
+  Sum(const Matrix<T>& m, unsigned int row, unsigned int col, int windowSize);
   // Hadamard product of two matrices of the same size
   static Matrix ElementWiseProduct(const Matrix& m1, const Matrix& m2);
   static constexpr Matrix MakeGaussianKernel(int radius);
@@ -75,7 +74,7 @@ public:
 };
 
 template<class T>
-Matrix<T>::Matrix(T** data, int rows, int cols)
+Matrix<T>::Matrix(T** data, unsigned int rows, unsigned int cols)
 {
     this->data = std::vector<std::vector<T>>(rows, std::vector<T>(cols));
     for (int i = 0; i < rows; ++i) {
@@ -88,7 +87,7 @@ Matrix<T>::Matrix(T** data, int rows, int cols)
 }
 
 template<class T>
-Matrix<T>::Matrix(int rows, int cols)
+Matrix<T>::Matrix(unsigned int rows, unsigned int cols)
 {
 
     this->data = std::vector<std::vector<T>>(rows, std::vector<T>(cols, 0));
@@ -126,7 +125,7 @@ Matrix<T>::operator=(Matrix<T> m)
 
 template<class T>
 T&
-Matrix<T>::At(const int m, const int n)
+Matrix<T>::At(unsigned const int m, unsigned const int n)
 {
   assert(m < this->rows);
   assert(n < this->cols);
@@ -137,7 +136,7 @@ Matrix<T>::At(const int m, const int n)
 
 template<class T>
 T
-Matrix<T>::operator()(int m, int n) const
+Matrix<T>::operator()(unsigned int m, unsigned int n) const
 {
   assert(m < this->rows);
   assert(n < this->cols);
@@ -232,8 +231,8 @@ Matrix<T>::MakeGaussianKernel(const int sigma, const int size)
 template<class T>
 T
 Matrix<T>::Sum(const Matrix<T>& m,
-               const int row,
-               const int col,
+               unsigned const int row,
+               unsigned const int col,
                const int windowSize)
 {
   int sum = 0;

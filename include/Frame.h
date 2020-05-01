@@ -54,27 +54,19 @@ struct Pixel
     }
 };
 
-class Frame
+class Frame: public Matrix<uint8_t>
 {
-  private:
-     // TODO: Use the matrix class (inherit or hold)
-    std::vector<std::vector<uint8_t>> data;
-    unsigned int width;
-    unsigned int height;
-
   public:
-    Frame(uint8_t** data, int width, int height);
-    Frame(int width, int height);
+    using Matrix<uint8_t>::Matrix;
+    Frame(uint8_t** data, unsigned int width, unsigned int height) : Matrix<uint8_t>(data, height, width) { };
     Pixel PixelAt(unsigned int x, unsigned int y) const;
-    uint8_t RawAt(unsigned int x, unsigned int y) const;
     void WriteAt(unsigned int x, unsigned int y, unsigned char val);
-    unsigned int Width() const;
-    unsigned int Height() const;
-    Matrix<int> GetIntMatrix() const;
-    Matrix<int> GetIntMatrix(int x, int y, int patch_size) const;
+    unsigned int Width() const { return this->cols; };
+    unsigned int Height() const { return this->rows; };
     Matrix<double> GetDoubleMatrix() const;
     Matrix<double> GetDoubleMatrix(int x, int y, int patch_size) const;
     Frame operator*(const Frame& f) const;
+    uint8_t operator()(unsigned int x, unsigned int y) const { return this->data[y][x]; };
 };
 }
 
