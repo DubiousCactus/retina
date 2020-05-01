@@ -28,8 +28,8 @@ class ORBExtractor : FeatureExtractor
   public:
     explicit ORBExtractor(size_t n_keypoints);
     std::vector<KeyPoint> GetKeypoints();
-    std::vector<KeyPoint> Extract(const Frame* frame) override;
-    Frame* GetAnnotatedFrame() override;
+    std::vector<KeyPoint> Extract(const Frame& frame) override;
+    std::shared_ptr<Frame> GetAnnotatedFrame() override;
 };
 }
 

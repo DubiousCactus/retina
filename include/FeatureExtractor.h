@@ -14,6 +14,7 @@
 #include <iostream>
 #include <utility>
 #include <vector>
+#include <memory>
 
 #include "Frame.h"
 
@@ -85,13 +86,13 @@ class FeatureExtractor
   protected:
     std::vector<FeatureDescriptor> features;
     std::vector<KeyPoint> keypoints;
-    Frame* annotated_frame;
+    std::shared_ptr<Frame> annotated_frame;
     bool non_max_suppression;
     bool annotate;
 
   public:
-    virtual std::vector<KeyPoint> Extract(const Frame* frame) = 0;
-    virtual Frame* GetAnnotatedFrame() = 0;
+    virtual std::vector<KeyPoint> Extract(const Frame& frame) = 0;
+    virtual std::shared_ptr<Frame> GetAnnotatedFrame() = 0;
 };
 }
 

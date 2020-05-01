@@ -9,45 +9,29 @@
 namespace retina {
 Frame::Frame(uint8_t** data, int width, int height)
 {
-    this->data = data;
+    this->data = std::vector<std::vector<uint8_t>>(height, std::vector<uint8_t>(width));
+    for (int i = 0; i < height; ++i) {
+        for (int j = 0; j < width; ++j) {
+            this->data[i][j] = data[i][j];
+        }
+    }
     this->width = width;
     this->height = height;
 }
 
 Frame::Frame(int width, int height)
 {
-    this->data = new uint8_t*[height];
-    for (int i = 0; i < height; ++i) {
-        this->data[i] = new uint8_t[width]{ 0 };
-    }
+    this->data = std::vector<std::vector<uint8_t>>(height, std::vector<uint8_t>(width, 0));
     this->width = width;
     this->height = height;
 }
 
-Frame::Frame(const Frame& f)
-{
-    this->width = f.width;
-    this->height = f.height;
-    this->data = new uint8_t*[f.height];
-    for (int i = 0; i < f.height; ++i) {
-        this->data[i] = new uint8_t[f.width];
-        for (int j = 0; j < f.width; ++j) {
-            this->data[i][j] = f.data[i][j];
-        }
-    }
-}
-
-Frame::~Frame()
-{
-    // delete this->data;
-}
-
-Pixel*
+Pixel
 Frame::PixelAt(unsigned int x, unsigned int y) const
 {
     assert(x < this->width && y < this->height);
     // TODO: Use cache
-    return new Pixel(x, y, this->data[y][x]);
+    return Pixel(x, y, this->data[y][x]);
 }
 
 uint8_t
@@ -70,7 +54,7 @@ Frame::GetIntMatrix() const
     Matrix<int> intMat(this->height, this->width);
     for (int i = 0; i < this->height; ++i) {
         for (int j = 0; j < this->width; ++j) {
-            *intMat.At(i, j) = (int)this->RawAt(j, i);
+            intMat.At(i, j) = (int)this->RawAt(j, i);
         }
     }
     return intMat;
@@ -88,7 +72,7 @@ Frame::GetIntMatrix(int x, int y, int patch_size) const
     Matrix<int> intMat(patch_size, patch_size);
     for (int i = -offset; i < offset; ++i) {
         for (int j = -offset; j < offset; ++j) {
-            *intMat.At(i + offset, j + offset) = (int)this->data[y + j][x + i];
+            intMat.At(i + offset, j + offset) = (int)this->data[y + j][x + i];
         }
     }
     return intMat;
@@ -100,7 +84,7 @@ Frame::GetDoubleMatrix() const
     Matrix<double> doubleMat(this->height, this->width);
     for (int i = 0; i < this->height; ++i) {
         for (int j = 0; j < this->width; ++j) {
-            *doubleMat.At(i, j) = (double)this->data[i][j];
+            doubleMat.At(i, j) = (double)this->data[i][j];
         }
     }
     return doubleMat;
@@ -118,20 +102,20 @@ Frame::GetDoubleMatrix(int x, int y, int patch_size) const
     Matrix<double> doubleMat(patch_size, patch_size);
     for (int i = -offset; i < offset; ++i) {
         for (int j = -offset; j < offset; ++j) {
-            *doubleMat.At(i + offset, j + offset) =
+            doubleMat.At(i + offset, j + offset) =
               (double)this->data[y + j][x + i];
         }
     }
     return doubleMat;
 }
 
-int
+unsigned int
 Frame::Width() const
 {
     return this->width;
 }
 
-int
+unsigned int
 Frame::Height() const
 {
     return this->height;

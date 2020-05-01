@@ -22,15 +22,15 @@ class HarrisExtractor : FeatureExtractor
   public:
     HarrisExtractor(bool smoothing, bool non_max_suppression, bool annotate);
     /* Extracts keypoints in image f using the Harris corner measure */
-    std::vector<KeyPoint> Extract(const Frame* f) override;
+    std::vector<KeyPoint> Extract(const Frame& f) override;
     /* Computes the Harris corner response of pixel <x,y> in image f,
      * within a patch of block_size*block_size
      */
-    float MeasureCorner(const Frame* f, int x, int y, int block_size);
+    float MeasureCorner(const Frame& f, int x, int y, int block_size);
     /* Returns an image as a copy of the extracted frame, with keypoint
      * annotations.
      */
-    Frame* GetAnnotatedFrame() override;
+    std::shared_ptr<Frame> GetAnnotatedFrame() override;
     std::vector<KeyPoint> GetKeypoints();
 };
 }

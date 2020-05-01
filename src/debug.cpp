@@ -32,9 +32,9 @@ void debug()
 
     for (int y = 0; y < resizedImage.height(); y++) {
         for (int x = 0; x < resizedImage.width(); x++) {
-            resizedImage(x, y, 0, 0) = *frame_small(y, x);
-            resizedImage(x, y, 0, 1) = *frame_small(y, x);
-            resizedImage(x, y, 0, 2) = *frame_small(y, x);
+            resizedImage(x, y, 0, 0) = frame_small(y, x);
+            resizedImage(x, y, 0, 1) = frame_small(y, x);
+            resizedImage(x, y, 0, 2) = frame_small(y, x);
         }
     }
     CImgDisplay originalFrame(image, "Original image"), resizedFrame(resizedImage, "Downscaled image");
@@ -47,19 +47,29 @@ void debug()
 
 void video()
 {
-    retina::StreamParser streamParser("desk.mpg");
-    retina::Frame *f = nullptr;
+    retina::StreamParser streamParser("flip.mp4");
+    std::optional<retina::Frame> f;
     int i = 0;
     f = streamParser.NextFrame();
-    if (f == nullptr) {
-        std::cerr << "[!] Could not parse the next frame!" << std::endl;
-        exit(1);
+    retina::ORBExtractor extractor(5000);
+
+    CImgDisplay annotatedDisp(f->Width(), f->Height());
+    CImg<uint8_t> annotatedImage(f->Width(), f->Height(), 1, 1, 0);
+
+    while(f.has_value()) {
+        std::cout << "Frame " << i++ << std::endl;
+        extractor.Extract(*f);
+        std::shared_ptr<retina::Frame> annotated = extractor.GetAnnotatedFrame();
+
+        for (int y = 0; y < annotated->Height(); y++)
+            for (int x = 0; x < annotated->Width(); x++)
+                annotatedImage(x, y, 0, 0) = annotated->RawAt(x, y);
+
+        annotatedDisp.render(annotatedImage);
+        annotatedDisp.paint();
+        f = streamParser.NextFrame();
     }
-    std::cout << "[*] Extracting features..." << std::endl;
-//    while(i++ < 10)
-//        f = streamParser.NextFrame();
-//    retina::ORBExtractor extractor(500);
-//    extractor.Extract(f);
+    std::cout << "End of video stream" << std::endl;
     /*do {
         std::cout << "Frame no " << i++ << std::endl;
         f = streamParser.NextFrame();
@@ -75,20 +85,11 @@ void video()
     }*/
 //    std::vector<retina::KeyPoint> keypoints = extractor.GetKeypoints();
 //    std::cout << "[*] Keypoints extracted: " << keypoints.size() << std::endl;
+//
 
-//    retina::Frame* annotated = extractor.GetAnnotatedFrame();
-    retina::Frame* annotated = f;
-    CImg<uint8_t> annotatedImage(annotated->Width(), annotated->Height(), 1, 1, 0);
-
-    for (int y = 0; y < annotated->Height(); y++)
-        for (int x = 0; x < annotated->Width(); x++)
-            annotatedImage(x, y, 0, 0) = annotated->RawAt(x, y);
-
-    CImgDisplay annotatedDisp(annotatedImage,"FAST keypoints");
-
-    while (!annotatedDisp.is_closed()) {
-        annotatedDisp.wait();
-    }
+//    while (!annotatedDisp.is_closed()) {
+//        annotatedDisp.wait();
+//    }
 }
 
 int main(int argc, char **argv)

@@ -33,7 +33,7 @@ ORBExtractor::ORBExtractor(size_t n_keypoints)
 }
 
 std::vector<KeyPoint>
-ORBExtractor::Extract(const Frame* frame)
+ORBExtractor::Extract(const Frame& frame)
 {
   /*
    * 1. Build the PoG to produce multiscale-features
@@ -41,10 +41,9 @@ ORBExtractor::Extract(const Frame* frame)
    * 3. Apply Harris corner measure to find the top N points
    */
 
-  assert(frame != nullptr);
   // STEP 1: Build the scale pyramid of the current frame
   std::cout << "\t-> Building the pyramid" << std::endl;
-  ScalePyramid pyramid = this->BuildPyramid();
+//  ScalePyramid pyramid = this->BuildPyramid();
 
   auto start = std::chrono::steady_clock::now();
 
@@ -60,8 +59,8 @@ ORBExtractor::Extract(const Frame* frame)
   start = std::chrono::steady_clock::now();
 
   for (auto kp : this->keypoints) {
-    if (kp.x - 3 < 0 || kp.x + 3 >= frame->Width() || kp.y - 3 < 0 ||
-        kp.y + 3 >= frame->Height()) {
+    if (kp.x - 3 < 0 || kp.x + 3 >= frame.Width() || kp.y - 3 < 0 ||
+        kp.y + 3 >= frame.Height()) {
       continue;
     }
     kp.score = this->harris_extractor.MeasureCorner(frame, kp.x, kp.y, 7);
@@ -84,8 +83,7 @@ ORBExtractor::Extract(const Frame* frame)
 
   start = std::chrono::steady_clock::now();
   Matrix<double> gaussianKernel = Matrix<double>::MakeGaussianKernel(2, 9);
-  Matrix<double> img =
-    Matrix<double>::Convolve(frame->GetDoubleMatrix(), gaussianKernel);
+  Matrix<double> img = Matrix<double>::Convolve(frame.GetDoubleMatrix(), gaussianKernel);
   end = std::chrono::steady_clock::now();
   std::cout << "\t-> Gaussian smoothing executed in "
             << (float)std::chrono::duration_cast<std::chrono::microseconds>(
@@ -104,7 +102,7 @@ ORBExtractor::Extract(const Frame* frame)
                  1000
             << " milliseconds" << std::endl;
 
-  this->annotated_frame = new Frame(*frame);
+  this->annotated_frame = std::make_shared<Frame>(Frame(frame));
   // STEP 2: for each level of the PoG
   /*for (unsigned short i = 0; i < this->pog_levels; i++) {
     std::vector<KeyPoint> keypoints = this->HarrisFilter(
@@ -114,9 +112,11 @@ ORBExtractor::Extract(const Frame* frame)
   return this->keypoints;
 }
 
-Frame*
+std::shared_ptr<Frame>
 ORBExtractor::GetAnnotatedFrame()
 {
+    if (annotated_frame == nullptr)
+        return nullptr;
   std::cout << "[*] Annotating..." << std::endl;
   for (auto kp : this->keypoints) {
     if (kp.x - 5 < 0 || kp.x + 5 >= annotated_frame->Width() || kp.y - 5 < 0 ||

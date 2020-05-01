@@ -25,8 +25,8 @@ class FASTExtractor : FeatureExtractor
     /*
      * Bresenham's circle drawing algorithm
      */
-    std::vector<Pixel*>
-    BresenhamCircle(Pixel center, int radius, const Frame* frame);
+    std::vector<Pixel>
+    BresenhamCircle(Pixel center, int radius, const Frame& frame);
     void NonMaxSuppression(const Matrix<double>& imgMatrix,
                            Matrix<int>& fastResponse);
     /* Computes the given patch's orientation using the intensity
@@ -51,8 +51,8 @@ class FASTExtractor : FeatureExtractor
      * Accelerated Segment Test algorithm with a given circular radius
      * (threshold)
      */
-    std::vector<KeyPoint> Extract(const Frame* f) override;
-    Frame* GetAnnotatedFrame() override;
+    std::vector<KeyPoint> Extract(const Frame& f) override;
+    std::shared_ptr<Frame> GetAnnotatedFrame() override;
 };
 }
 

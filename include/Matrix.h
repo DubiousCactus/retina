@@ -29,19 +29,20 @@ template<class T>
 class Matrix
 {
 private:
-  T** data;
-  int rows{};
-  int cols{};
+    std::vector<std::vector<T>> data;
+    int rows{};
+    int cols{};
 
 public:
   template<size_t n_rows, size_t n_cols>
   explicit Matrix(T (&data)[n_rows][n_cols])
   {
-    T** data_p = new T*[n_rows];
-    for (size_t i = 0; i < n_rows; i++) {
-      data_p[i] = data[i];
-    }
-    this->data = data_p;
+      this->data = std::vector<std::vector<T>>(n_rows, std::vector<T>(n_cols));
+      for (int i = 0; i < n_rows; ++i) {
+          for (int j = 0; j < n_cols; ++j) {
+              this->data[i][j] = data[i][j];
+          }
+      }
     this->rows = n_rows;
     this->cols = n_cols;
   }
@@ -51,8 +52,8 @@ public:
   ~Matrix();
   Matrix& operator=(Matrix m);
   Matrix operator*(Matrix m);
-  T* operator()(int m, int n) const;
-  T* At(int m, int n) const;
+  T operator()(int m, int n) const;
+  T& At(int m, int n);
   Matrix Transposed() const;
   void Transpose();
   void Print() const;
@@ -76,40 +77,41 @@ public:
 template<class T>
 Matrix<T>::Matrix(T** data, int rows, int cols)
 {
-  this->data = data;
-  this->rows = rows;
-  this->cols = cols;
+    this->data = std::vector<std::vector<T>>(rows, std::vector<T>(cols));
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            this->data[i][j] = data[i][j];
+        }
+    }
+    this->rows = rows;
+    this->cols = cols;
 }
 
 template<class T>
 Matrix<T>::Matrix(int rows, int cols)
 {
-  this->data = new T*[rows];
-  for (int i = 0; i < rows; ++i) {
-    this->data[i] = new T[cols];
-  }
-  this->rows = rows;
-  this->cols = cols;
+
+    this->data = std::vector<std::vector<T>>(rows, std::vector<T>(cols, 0));
+    this->rows = rows;
+    this->cols = cols;
 }
 
 template<class T>
 Matrix<T>::Matrix(const Matrix<T>& m)
 {
-  this->rows = m.rows;
-  this->cols = m.cols;
-  this->data = new T*[rows];
-  for (int i = 0; i < rows; ++i) {
-    this->data[i] = new T[cols];
-    for (int j = 0; j < cols; ++j) {
-      this->data[i][j] = m.data[i][j];
+    this->rows = m.rows;
+    this->cols = m.cols;
+    this->data = std::vector<std::vector<T>>(m.rows, std::vector<T>(m.cols));
+    for (int i = 0; i < m.rows; ++i) {
+        for (int j = 0; j < m.cols; ++j) {
+            this->data[i][j] = m.data[i][j];
+        }
     }
-  }
 }
 
 template<class T>
 Matrix<T>::~Matrix()
 {
-  free(this->data);
 }
 
 template<class T>
@@ -123,25 +125,25 @@ Matrix<T>::operator=(Matrix<T> m)
 }
 
 template<class T>
-T*
-Matrix<T>::At(const int m, const int n) const
+T&
+Matrix<T>::At(const int m, const int n)
 {
   assert(m < this->rows);
   assert(n < this->cols);
   assert(m >= 0);
   assert(n >= 0);
-  return &this->data[m][n];
+  return this->data[m][n];
 }
 
 template<class T>
-T*
+T
 Matrix<T>::operator()(int m, int n) const
 {
   assert(m < this->rows);
   assert(n < this->cols);
   assert(m >= 0);
   assert(n >= 0);
-  return &this->data[m][n];
+  return this->data[m][n];
 }
 
 template<class T>
@@ -157,17 +159,17 @@ Matrix<T>::Convolve(const Matrix<T>& m, const Matrix<T>& kernel)
   Matrix<T> c(m.Rows(), m.Cols());
   auto ZeroPaddedAccess = [](auto& mat, int i, int j) {
     return (i < 0 || i >= mat.Rows() || j < 0 || j >= mat.Cols()) ? 0
-                                                                  : *mat(i, j);
+                                                                  : mat(i, j);
   };
   for (int i = 0; i < m.Rows(); ++i) {
     for (int j = 0; j < m.Cols(); ++j) {
       conv = 0;
       for (int k = -n2; k <= n2; ++k) {
         for (int l = -m2; l <= m2; ++l) {
-          conv += *kernel(k + n2, l + m2) * ZeroPaddedAccess(m, i - k, j - l);
+          conv += kernel(k + n2, l + m2) * ZeroPaddedAccess(m, i - k, j - l);
         }
       }
-      *c(i, j) = conv;
+      c.At(i, j) = conv;
     }
   }
   return c;
@@ -187,14 +189,14 @@ Matrix<T>::MakeGaussianKernel(const int radius)
   for (int i = 0; i < kernel.Rows(); ++i) {
     for (int j = 0; j < kernel.Cols(); ++j) {
       x = Gaussian(i, radius, sigma) * Gaussian(j, radius, sigma);
-      *kernel(i, j) = x;
+      kernel.At(i, j) = x;
       sum += x;
     }
   }
   // Normalization
   for (int i = 0; i < kernel.Rows(); ++i) {
     for (int j = 0; j < kernel.Cols(); ++j) {
-      *kernel(i, j) /= sum;
+      kernel.At(i, j) /= sum;
     }
   }
   return kernel;
@@ -207,21 +209,21 @@ Matrix<T>::MakeGaussianKernel(const int sigma, const int size)
   Matrix<T> kernel(size, size);
   int radius = size / 2;
   double r = 0, sum = 0, s = 2.0 * sigma * sigma;
-  // assert((radius % 2) != 0); // Kernel must be odd in order to have a
+   assert((size % 2) != 0); // Kernel must be odd in order to have a
   // central element
 
   for (int x = -radius; x <= radius; ++x) {
     for (int y = -radius; y <= radius; ++y) {
       r = sqrt(x * x + y * y);
-      *kernel(x + radius, y + radius) = (exp(-(r * r) / s)) / (M_PI * s);
-      sum += *kernel(x + radius, y + radius);
+      kernel.At(x + radius, y + radius) = (exp(-(r * r) / s)) / (M_PI * s);
+      sum += kernel(x + radius, y + radius);
     }
   }
 
   // Normalization
   for (int i = 0; i < kernel.Rows(); ++i) {
     for (int j = 0; j < kernel.Cols(); ++j) {
-      *kernel(i, j) /= sum;
+      kernel.At(i, j) /= sum;
     }
   }
   return kernel;
@@ -240,7 +242,7 @@ Matrix<T>::Sum(const Matrix<T>& m,
   assert((col - offset) >= 0 && (col + offset) < m.Cols());
   for (int i = -offset; i <= offset; ++i) {
     for (int j = -offset; j <= offset; ++j) {
-      sum += *m(row + i, col + j);
+      sum += m(row + i, col + j);
     }
   }
   return sum;
@@ -255,7 +257,7 @@ Matrix<T>::ElementWiseProduct(const Matrix<T>& m1, const Matrix<T>& m2)
   Matrix<T> mul(m1.Rows(), m2.Rows());
   for (int i = 0; i < m1.Rows(); ++i) {
     for (int j = 0; j < m1.Cols(); ++j) {
-      *mul(i, j) = *m1(i, j) * *m2(i, j);
+      mul.At(i, j) = m1(i, j) * m2(i, j);
     }
   }
   return mul;
@@ -281,10 +283,10 @@ Matrix<T>::Resize(const Matrix<T>& m,
         for (int i = 0; i < (resized.Cols() - xstep); i++) {
           for (int k = 0; k < (ystep - 1); k++) {
             for (int l = 0; l < (xstep - 1); l++) {
-              *resized(j, i) += *m(ystep * j + k, xstep * i + l);
+              resized.At(j, i) += m(ystep * j + k, xstep * i + l);
             }
           }
-          *resized(j, i) /= area;
+          resized.At(j, i) /= area;
         }
       }
     }
@@ -305,9 +307,9 @@ Matrix<T> Matrix<T>::operator*(const Matrix<T> m)
     for (int i = 0; i < m.Cols(); ++i) {
       sum = 0;
       for (int k = 0; k < m.Rows(); ++k) {
-        sum += *this->At(j, k) * *m(k, i);
+        sum += this(j, k) * m(k, i);
       }
-      *mul(j, i) = sum;
+      mul.At(j, i) = sum;
     }
   }
   return mul;
@@ -320,7 +322,7 @@ Matrix<T>::Transposed() const
   Matrix<T> t(this->cols, this->rows);
   for (int i = 0; i < this->rows; ++i) {
     for (int j = 0; j < this->cols; ++j) {
-      *t(j, i) = *this->At(i, j);
+      t.At(j, i) = this(i, j);
     }
   }
   return t;
@@ -333,7 +335,7 @@ Matrix<T>::Transpose()
   Matrix<T> t(this->cols, this->rows);
   for (int i = 0; i < this->rows; ++i) {
     for (int j = 0; j < this->cols; ++j) {
-      *t(j, i) = *this->At(i, j);
+      t.At(j, i) = this(i, j);
     }
   }
   this = t;
@@ -359,7 +361,7 @@ Matrix<T>::Print() const
 {
   for (int i = 0; i < this->rows; ++i) {
     for (int j = 0; j < this->cols; ++j) {
-      std::cout << *this->At(i, j) << " ";
+      std::cout << this(i, j) << " ";
     }
     std::cout << std::endl;
   }

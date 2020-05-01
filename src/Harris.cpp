@@ -20,21 +20,21 @@ HarrisExtractor::HarrisExtractor(bool smoothing,
 
 /* Extracts keypoints in image f using the Harris corner measure */
 std::vector<KeyPoint>
-HarrisExtractor::Extract(const Frame* frame)
+HarrisExtractor::Extract(const Frame& frame)
 {
     int offset = this->window_size / 2;
     double Sxx, Syy, Sxy;
     double det, trace, r, threshold;
     double sX[3][3] = { { -1, 0, 1 }, { -2, 0, 2 }, { -1, 0, 1 } };
     double sY[3][3] = { { -1, -2, -1 }, { 0, 0, 0 }, { 1, 2, 1 } };
-    this->annotated_frame = annotate ? new Frame(*frame) : nullptr;
+    this->annotated_frame = annotate ? std::make_shared<Frame>(Frame(frame)) : nullptr;
     Matrix<double> sobelX(sX);
     Matrix<double> sobelY(sY);
     Matrix<double> gaussianKernel = Matrix<double>::MakeGaussianKernel(3);
     Matrix<double> img =
       this->smoothing
-        ? Matrix<double>::Convolve(frame->GetDoubleMatrix(), gaussianKernel)
-        : frame->GetDoubleMatrix();
+        ? Matrix<double>::Convolve(frame.GetDoubleMatrix(), gaussianKernel)
+        : frame.GetDoubleMatrix();
     Matrix<double> f_x = Matrix<double>::Convolve(img, sobelX);
     Matrix<double> f_y = Matrix<double>::Convolve(img, sobelY);
 
@@ -53,7 +53,7 @@ HarrisExtractor::Extract(const Frame* frame)
             trace = Sxx + Syy;
             r = det - this->sensitivity_factor * pow(trace, 2);
             threshold += r;
-            *harrisResponse(i, j) = r;
+            harrisResponse.At(i, j) = r;
         }
     }
     threshold /= img.Rows() * img.Cols();
@@ -65,10 +65,10 @@ HarrisExtractor::Extract(const Frame* frame)
 
     for (int i = offset; i < img.Rows() - offset; ++i) {
         for (int j = offset; j < img.Cols() - offset; ++j) {
-            if (*harrisResponse(i, j) > threshold &&
-                (i > 5 && i < frame->Height() - 5) &&
-                (j > 5 && j < frame->Width() - 5)) {
-                this->keypoints.emplace_back(j, i, *harrisResponse(i, j));
+            if (harrisResponse(i, j) > threshold &&
+                (i > 5 && i < frame.Height() - 5) &&
+                (j > 5 && j < frame.Width() - 5)) {
+                this->keypoints.emplace_back(j, i, harrisResponse(i, j));
             }
         }
     }
@@ -87,8 +87,8 @@ HarrisExtractor::NonMaxSuppression(int window_size,
              ++j) {
             for (int k = -offset; k <= offset; ++k) {
                 for (int l = -offset; l <= offset; ++l) {
-                    if (*harrisResponse(i + k, j + l) > *harrisResponse(i, j)) {
-                        *harrisResponse(i, j) = 0;
+                    if (harrisResponse(i + k, j + l) > harrisResponse(i, j)) {
+                        harrisResponse.At(i, j) = 0;
                         break;
                     }
                 }
@@ -101,11 +101,11 @@ HarrisExtractor::NonMaxSuppression(int window_size,
  * within a patch of block_size*block_size
  */
 float
-HarrisExtractor::MeasureCorner(const Frame* f, int x, int y, int block_size)
+HarrisExtractor::MeasureCorner(const Frame& f, int x, int y, int block_size)
 {
     // TODO: Optimize (don't use matrices you fool!)
     // 1. Extract a patch of blocksize*blocksize from the image f
-    Matrix<double> patch = f->GetDoubleMatrix(x, y, block_size);
+    Matrix<double> patch = f.GetDoubleMatrix(x, y, block_size);
     // TODO: Maybe smoothen the patch??
 
     // 3. Compute the derivatives of the pixel within the patch
@@ -138,7 +138,7 @@ HarrisExtractor::MeasureCorner(const Frame* f, int x, int y, int block_size)
 /* Returns an image as a copy of the extracted frame, with keypoint
  * annotations.
  */
-Frame*
+std::shared_ptr<Frame>
 HarrisExtractor::GetAnnotatedFrame()
 {
     assert(this->annotated_frame);

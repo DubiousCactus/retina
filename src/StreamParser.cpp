@@ -10,20 +10,20 @@ namespace retina {
 uint8_t*
 StreamParser::GetRGBPixel(int x, int y)
 {
-    auto *pixel = new uint8_t[3];
+    auto pixel = new uint8_t[3];
     pixel[0] = *(this->rgbFrame->data[0] + y * this->rgbFrame->linesize[0] + (x*3));
     pixel[1] = *(this->rgbFrame->data[0] + y * this->rgbFrame->linesize[0] + (x*3) + 1);
     pixel[2] = *(this->rgbFrame->data[0] + y * this->rgbFrame->linesize[0] + (x*3) + 2);
-
     return pixel;
 }
 
 uint8_t
 StreamParser::GetGrayscalePixel(int x, int y)
 {
-    uint8_t* rgb = this->GetRGBPixel(x, y);
-
-    return 0.33 * rgb[0] + 0.33 * rgb[1] + 0.33 * rgb[2];
+    auto rgb = this->GetRGBPixel(x, y);
+    uint8_t gray_pixel = 0.33 * rgb[0] + 0.33 * rgb[1] + 0.33 * rgb[2];
+    delete[] rgb;
+    return gray_pixel;
 }
 
 
@@ -104,48 +104,51 @@ StreamParser::~StreamParser()
     av_frame_free(&this->frame);
     av_frame_free(&this->rgbFrame);
     sws_freeContext(this->sws_ctx);
-    av_free(&this->buffer);
-    avcodec_close(this->codecContext);
+    av_freep(&this->buffer);
+    avcodec_free_context(&this->codecContext);
     avformat_close_input(&this->fmtContext);
     avformat_free_context(this->fmtContext);
-    avcodec_free_context(&this->codecContext);
 }
 
-Frame*
+std::optional<Frame>
 StreamParser::NextFrame()
 {
-    Frame* f = nullptr;
+    std::optional<Frame> f = std::nullopt;
     AVPacket packet;
     int frameFinished = 0;
     if (av_read_frame(this->fmtContext, &packet) < 0) {
-        av_free_packet(&packet);
-        return nullptr;
+        av_packet_unref(&packet);
+        return std::nullopt;
     }
-
 
     while (!frameFinished) {
-        if (packet.stream_index == this->videoStreamIdx) {
-            avcodec_decode_video2(this->codecContext, this->frame, &frameFinished, &packet);
-            if (frameFinished) {
-                // Convert the frame from its original format to an RGB frame
-                sws_scale(sws_ctx, (uint8_t const * const *) this->frame->data,
-                          this->frame->linesize, 0, this->codecContext->height,
-                          this->rgbFrame->data, this->rgbFrame->linesize);
-                auto** buff = new uint8_t*[this->codecContext->height];
-                for (int i = 0; i < this->codecContext->height; i++) {
-                    buff[i] = new uint8_t[this->codecContext->width];
-                    for (int j = 0; j < this->codecContext->width; j++) {
-                        buff[i][j] = this->GetGrayscalePixel(j, i);
-                    }
-                }
-
-                f = new Frame(buff, this->codecContext->width, this->codecContext->height);
+        while (packet.stream_index != this->videoStreamIdx) {
+            if (av_read_frame(this->fmtContext, &packet) < 0) {
+                av_packet_unref(&packet);
+                return std::nullopt;
             }
         }
+        avcodec_decode_video2(this->codecContext, this->frame, &frameFinished, &packet);
+        if (frameFinished) {
+            // Convert the frame from its original format to an RGB frame
+            sws_scale(this->sws_ctx, (uint8_t const * const *) this->frame->data,
+                      this->frame->linesize, 0, this->codecContext->height,
+                      this->rgbFrame->data, this->rgbFrame->linesize);
+            auto buff = new uint8_t*[this->codecContext->height];
+            for (int i = 0; i < this->codecContext->height; i++) {
+                buff[i] = new uint8_t[this->codecContext->width];
+                for (int j = 0; j < this->codecContext->width; j++) {
+                    buff[i][j] = this->GetGrayscalePixel(j, i);
+                }
+            }
+            f = Frame(buff, this->codecContext->width, this->codecContext->height);
+            /* Clean up the buffer */
+            for (int i = 0; i < this->codecContext->height; ++i)
+                delete[] buff[i];
+            delete[] buff;
+        }
     }
-
-    av_free_packet(&packet);
-
+    av_packet_unref(&packet);
     return f;
 }
 }

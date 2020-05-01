@@ -13,6 +13,8 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <optional>
+#include <memory>
 
 extern "C"
 {
@@ -43,7 +45,7 @@ class StreamParser
   public:
     explicit StreamParser(std::string file_path);
     ~StreamParser();
-    Frame* NextFrame();
+    std::optional<Frame> NextFrame();
 };
 }
 

@@ -12,6 +12,7 @@
 #include <cassert>
 #include <cstdint>
 #include <iostream>
+#include <memory>
 
 namespace retina {
 /* TODO: Remove the Pixel structure, it's garbage */
@@ -46,26 +47,29 @@ struct Pixel
     {
         return this->intensity < p.intensity;
     }
+
+    bool operator==(const Pixel& p) const
+    {
+        return this->intensity == p.intensity && this->x == p.x && this->y == p.y;
+    }
 };
 
 class Frame
 {
   private:
-    uint8_t** data;
-    // std::map<int, Pixel*> pixels_cache;
+     // TODO: Use the matrix class (inherit or hold)
+    std::vector<std::vector<uint8_t>> data;
     unsigned int width;
     unsigned int height;
 
   public:
     Frame(uint8_t** data, int width, int height);
     Frame(int width, int height);
-    Frame(const Frame& f);
-    ~Frame();
-    Pixel* PixelAt(unsigned int x, unsigned int y) const;
+    Pixel PixelAt(unsigned int x, unsigned int y) const;
     uint8_t RawAt(unsigned int x, unsigned int y) const;
     void WriteAt(unsigned int x, unsigned int y, unsigned char val);
-    int Width() const;
-    int Height() const;
+    unsigned int Width() const;
+    unsigned int Height() const;
     Matrix<int> GetIntMatrix() const;
     Matrix<int> GetIntMatrix(int x, int y, int patch_size) const;
     Matrix<double> GetDoubleMatrix() const;
