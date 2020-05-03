@@ -35,120 +35,62 @@ FASTExtractor::FASTExtractor(unsigned int margin,
 /*
  * Bresenham's circle drawing algorithm
  */
-// TODO: Fix the memory leak by using a shared pointer for Pixels
+// TODO: Improve by removing the Pixel structure: use references to the frame pixels instead!
 std::vector<Pixel>
-FASTExtractor::BresenhamCircle(const Pixel center,
-                               int radius,
-                               const Frame& frame)
+FASTExtractor::BresenhamCircle(const Pixel center, const Frame& frame)
 {
     std::vector<Pixel> circlePixels;
-    circlePixels.reserve(radius * 8);
-    Pixel to(0, radius);
-    int d = 3 - (2 * radius);
+    circlePixels.reserve(this->radius * 8);
+//    std::pair<int, int> to {this->radius, 0};
+    Pixel to(this->radius, 0);
+    int xChange = 1 - 2*this->radius, yChange = 1;
+    int d = 0;
+    int pointsPerOctant = 0;
 
     auto EightWaySymmetricPlot =
       [](const Pixel c, Pixel t, const Frame& f, std::vector<Pixel>& circle) {
-          circle.push_back(f.PixelAt(c.x + t.x, c.y - t.y));
-          circle.push_back(f.PixelAt(c.x + t.x, c.y + t.y));
-          circle.push_back(f.PixelAt(c.x - t.x, c.y + t.y));
-          circle.push_back(f.PixelAt(c.x - t.x, c.y - t.y));
-          circle.push_back(f.PixelAt(c.x + t.y, c.y + t.x));
-          circle.push_back(f.PixelAt(c.x - t.y, c.y + t.x));
-          circle.push_back(f.PixelAt(c.x + t.y, c.y - t.x));
-          circle.push_back(f.PixelAt(c.x - t.y, c.y - t.x));
+          circle.emplace_back(f.PixelAt(c.x + t.x, c.y + t.y)); // Octant 1
+          circle.emplace_back(f.PixelAt(c.x - t.x, c.y + t.y)); // Octant 4
+          circle.emplace_back(f.PixelAt(c.x - t.x, c.y - t.y)); // Octant 5
+          circle.emplace_back(f.PixelAt(c.x + t.x, c.y - t.y)); // Octant 8
+          circle.emplace_back(f.PixelAt(c.x + t.y, c.y + t.x)); // Octant 2
+          circle.emplace_back(f.PixelAt(c.x - t.y, c.y + t.x)); // Octant 3
+          circle.emplace_back(f.PixelAt(c.x - t.y, c.y - t.x)); // Octant 6
+          circle.emplace_back(f.PixelAt(c.x + t.y, c.y - t.x)); // Octant 7
       };
 
-    EightWaySymmetricPlot(center, to, frame, circlePixels);
-    while (to.y >= to.x) {
-        to.x++;
-        if (d > 0) {
-            to.y--;
-            d = d + 4 * (to.x - to.y) + 10;
-        } else {
-            d = d + 4 * to.x + 6;
-        }
-
+    while (to.x >= to.y) {
         EightWaySymmetricPlot(center, to, frame, circlePixels);
-    }
-
-    /* TODO: Optimize by skipping the duplicates removal and sorting. The
-     * whole parsing can be done in the "sorting phase" directly */
-
-    /* Remove duplicates  and reorder */
-    std::vector<Pixel> circle;
-    circle.reserve(radius * 8);
-    for (auto& circlePixel : circlePixels) {
-        if (std::find(circle.begin(), circle.end(), circlePixel) == circle.end())
-            circle.push_back(circlePixel);
-    }
-
-    // TODO: Optimize and refactor
-    int q = 0, quadLength = circle.size() / 4;
-    long unsigned int circleSize = circle.size();
-    bool search;
-    std::vector<Pixel> sortedCircle;
-    sortedCircle.reserve(8 * radius);
-    sortedCircle.push_back(circle.at(0));
-    assert(quadLength != 0);
-    for (long unsigned int i = 0; i < circleSize; i++) {
-        if (i != 0 && i % quadLength == 0)
-            q++;
-        search = true;
-        for (auto p = circle.begin() + 1; p != circle.end() && search; p++) {
-            switch (q) {
-                case 0:
-                    if (((p->x - sortedCircle.back().x) == 1 ||
-                         p->x == sortedCircle.back().x) &&
-                        (p->y == sortedCircle.back().y ||
-                         (p->y - sortedCircle.back().y) == 1)) {
-                        sortedCircle.push_back(*p);
-                        circle.erase(p);
-                        search = false;
-                    }
-                    break;
-                case 1:
-                    if (((p->x - sortedCircle.back().x) == -1 ||
-                         p->x == sortedCircle.back().x) &&
-                        (p->y == sortedCircle.back().y ||
-                         (p->y - sortedCircle.back().y) == 1)) {
-                        sortedCircle.push_back(*p);
-                        circle.erase(p);
-                        search = false;
-                    }
-                    break;
-                case 2:
-                    if (((p->x - sortedCircle.back().x) == -1 ||
-                         p->x == sortedCircle.back().x) &&
-                        (p->y == sortedCircle.back().y ||
-                         (p->y - sortedCircle.back().y) == -1)) {
-                        sortedCircle.push_back(*p);
-                        circle.erase(p);
-                        search = false;
-                    }
-                    break;
-                case 3:
-                    if (((p->x - sortedCircle.back().x) == 1 ||
-                         p->x == sortedCircle.back().x) &&
-                        (p->y == sortedCircle.back().y ||
-                         (p->y - sortedCircle.back().y) == -1)) {
-                        sortedCircle.push_back(*p);
-                        circle.erase(p);
-                        search = false;
-                    }
-                    break;
-                default:
-                    break;
-            }
+        pointsPerOctant++;
+        to.y++;
+        d += yChange;
+        yChange += 2;
+        if ((2 * d + xChange) > 0) {
+            to.x--;
+            d += xChange;
+            xChange += 2;
         }
+    }
+
+    std::vector<Pixel> sortedCircle(pointsPerOctant * 8);
+    for (int i = 0; i < pointsPerOctant; i++) {
+        sortedCircle[i] = circlePixels[i * 8]; // Octant 1: offset=0
+        sortedCircle[pointsPerOctant + i] = circlePixels[i * 8 + 4]; // Octant 2: offset=4
+        sortedCircle[(2 * pointsPerOctant) + i] = circlePixels[i * 8 + 5]; // Octant 3: offset=5
+        sortedCircle[(3 * pointsPerOctant) + i] = circlePixels[i * 8 + 1]; // Octant 4: offset=1
+        sortedCircle[(4 * pointsPerOctant) + i] = circlePixels[i * 8 + 2]; // Octant 5: offset=2
+        sortedCircle[(5 * pointsPerOctant) + i] = circlePixels[i * 8 + 6]; // Octant 6: offset=6
+        sortedCircle[(6 * pointsPerOctant) + i] = circlePixels[i * 8 + 7]; // Octant 7: offset=7
+        sortedCircle[(7 * pointsPerOctant) + i] = circlePixels[i * 8 + 3]; // Octant 8: offset=3
     }
 
     return sortedCircle;
 }
 
-float
-FASTExtractor::PatchOrientation(const Matrix<double>& img,
-                                const int cx,
-                                const int cy)
+    float
+    FASTExtractor::PatchOrientation(const Frame& img,
+                                    const int cx,
+                                    const int cy)
 {
     /* Compare with OpenCV's code to see if I made any mistake:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -191,15 +133,16 @@ static void ICAngles(const Mat& img, const std::vector<Rect>& layerinfo,
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     */
-    float theta, m01, m10;
+    float theta;
+    unsigned int m01, m10;
     m01 = m10 = 0;
     for (int y = cy - radius; y <= cy + radius; ++y) {
         for (int x = cx - radius; x <= cx + radius; ++x) {
             if (sqrt(pow(x - cx, 2) + pow(y - cy, 2)) <= radius) {
                 // m01 += pow(x, 0) * pow(y, 1) * *img(y, x);
                 // m10 += pow(x, 1) * pow(y, 0) * *img(y, x);
-                m01 += img(y, x) * y;
-                m10 += img(y, x) * x;
+                m01 += img(x, y) * y;
+                m10 += img(x, y) * x;
             }
         }
     }
@@ -229,12 +172,19 @@ FASTExtractor::Extract(const Frame& f)
      * 6. Non-maximal suppression (not in the case of ORB though)
      */
     int Ip, upperBound, lowerBound, score;
-    bool allAbove, allBelow, corner, brighter, darker;
+    bool corner, brighter, darker;
+    unsigned short brighterPixels = 4, darkerPixels = 4;
+    this->keypoints.clear();
+    this->keypoints.reserve(50000);
     this->annotated_frame = annotate ? std::make_shared<Frame>(Frame(f)) : nullptr;
-    Matrix<int> fastResponse(f.Height(), f.Width());
-    Matrix<double> imgMatrix = f.GetDoubleMatrix();
-    for (unsigned int y = this->margin; y < (f.Height() - this->margin); y++) {
-        for (unsigned int x = this->margin; x < (f.Width() - this->margin); x++) {
+    auto width = f.Width(), height = f.Height();
+    unsigned int max_y = height - this->margin;
+    unsigned int max_x = width - this->margin;
+//    if (this->non_max_suppression) TODO: Optional
+    Matrix<int> fastResponse(height, width);
+    // Using row-major ordering should take advantage of the CPU cache
+    for (unsigned int y = this->margin; y < max_y; y++) {
+        for (unsigned int x = this->margin; x < max_x; x++) {
             Ip = f(x, y);
             Pixel center(x, y);
             center.intensity = Ip;
@@ -243,40 +193,41 @@ FASTExtractor::Extract(const Frame& f)
             upperBound = Ip + this->intensity_threshold;
             lowerBound = Ip - this->intensity_threshold;
             if (this->contiguous_pixels == 12) {
+                std::vector<uint8_t> testPixels = {
+                    f(x, y - 3), f(x, y + 3), f(x - 3, y), f(x + 3, y)
+                };
                 if (this->full_high_speed_test) {
-                    if ((f(x, y - 3) <= upperBound &&
-                         f(x, y - 3) >= lowerBound) ||
-                        (f(x, y + 3) <= upperBound &&
-                         f(x, y + 3) >= lowerBound)) {
-                        // Cannot be a corner
-                        continue;
-                    } else if ((f(x - 3, y) <= upperBound &&
-                                f(x - 3, y) >= lowerBound) ||
-                               (f(x + 3, y) <= upperBound &&
-                                f(x + 3, y) >= lowerBound)) {
-                        // Cannot be a corner
-                        continue;
+                    bool skip = false;
+                    for (auto & testPixel : testPixels) {
+                        if (testPixel <= upperBound && testPixel >= lowerBound) {
+                            // Cannot be a corner
+                            skip = true;
+                            break;
+                        }
                     }
-                }
-                /* At least 3 of those 4 pixels must be brighter than p */
-                std::vector<uint8_t> testPixels = { f(x, y - 3),
-                                                    f(x, y + 3),
-                                                    f(x - 3, y),
-                                                    f(x + 3, y) };
-                allAbove = true, allBelow = true;
-                for (unsigned char & testPixel : testPixels) {
-                    if (testPixel <= upperBound)
-                        allAbove = false;
-                    if (testPixel >= lowerBound)
-                        allBelow = false;
-                }
+                    if (skip)
+                        continue;
+                } else {
+                    /* At least 3 of those 4 pixels must be ALL brighter or ALL darker than p */
+                    brighterPixels = darkerPixels = 4;
+                    for (auto p = testPixels.begin(); p != testPixels.end() &&
+                            (brighterPixels >=3 or darkerPixels >= 3); p++) {
+                        if (*p <= upperBound) {
+                            brighterPixels--;
+                        }
+                        if (*p >= lowerBound) {
+                            darkerPixels--;
+                        }
+                    }
 
-                if (!allAbove && !allBelow)
-                    continue;
+                    if (brighterPixels < 3 && darkerPixels < 3)
+                        continue;
+                }
             }
 
             /* Complete corner test */
-            auto circle = this->BresenhamCircle(center, this->radius, f);
+            auto circle = this->BresenhamCircle(center, f);
+            // TODO: Use a circular buffer or something in the std
             auto GetPixelWithOverflow = [](std::vector<Pixel>& v, unsigned int i) {
                 assert(i / 2 < v.size());
                 unsigned int circleSize = v.size();
@@ -288,6 +239,7 @@ FASTExtractor::Extract(const Frame& f)
             corner = false;
             for (unsigned int i = 0; i < (int)circle.size(); i++) {
                 std::vector<Pixel> contiguousPixels(this->contiguous_pixels, 0);
+                // TODO: Unwrap by multiples of 8 (minimum size of a circle)
                 for (unsigned int j = 0; j < this->contiguous_pixels; j++)
                     contiguousPixels[j] = GetPixelWithOverflow(circle, i + j);
 
@@ -341,7 +293,7 @@ FASTExtractor::Extract(const Frame& f)
     }
 
     if (non_max_suppression) {
-        this->NonMaxSuppression(imgMatrix, fastResponse);
+        this->NonMaxSuppression(f, fastResponse);
     }
 
     std::cout << "\t-> Found " << this->keypoints.size() << " keypoints"
@@ -351,7 +303,7 @@ FASTExtractor::Extract(const Frame& f)
 }
 
 void
-FASTExtractor::NonMaxSuppression(const Matrix<double>& imgMatrix,
+FASTExtractor::NonMaxSuppression(const Frame& image,
                                  Matrix<int>& fastResponse)
 {
     std::vector<KeyPoint> suppressed;
@@ -382,7 +334,7 @@ FASTExtractor::NonMaxSuppression(const Matrix<double>& imgMatrix,
             if (fastResponse(y, x) > 0) {
                 float patchOrientation = 0;
                 if (orientation) {
-                    patchOrientation = this->PatchOrientation(imgMatrix, x, y);
+                    patchOrientation = this->PatchOrientation(image, x, y);
                 }
                 suppressed.emplace_back(x, y, fastResponse(y, x), patchOrientation);
             }

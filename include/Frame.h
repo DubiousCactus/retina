@@ -22,6 +22,8 @@ struct Pixel
     int y{};
     unsigned char intensity;
 
+    Pixel() {}
+
     Pixel(int x, int y)
     {
         this->x = x;
@@ -50,7 +52,7 @@ struct Pixel
 
     bool operator==(const Pixel& p) const
     {
-        return this->intensity == p.intensity && this->x == p.x && this->y == p.y;
+        return this->x == p.x && this->y == p.y;
     }
 };
 
@@ -66,7 +68,7 @@ class Frame: public Matrix<uint8_t>
     Matrix<double> GetDoubleMatrix() const;
     Matrix<double> GetDoubleMatrix(int x, int y, int patch_size) const;
     Frame operator*(const Frame& f) const;
-    uint8_t operator()(unsigned int x, unsigned int y) const { return this->data[y][x]; };
+    uint8_t operator()(unsigned int x, unsigned int y) const { assert(y < this->rows); assert(x < this->cols); return this->data[y][x]; };
 };
 }
 

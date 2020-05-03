@@ -26,14 +26,13 @@ class FASTExtractor : FeatureExtractor
      * Bresenham's circle drawing algorithm
      */
     std::vector<Pixel>
-    BresenhamCircle(Pixel center, int radius, const Frame& frame);
-    void NonMaxSuppression(const Matrix<double>& imgMatrix,
-                           Matrix<int>& fastResponse);
+    BresenhamCircle(Pixel center, const Frame& f);
+    void NonMaxSuppression(const Frame& img, Matrix<int>& fastResponse);
     /* Computes the given patch's orientation using the intensity
      * centroid and the keypoint as center of patch.
      */
     float
-    PatchOrientation(const Matrix<double>& img, int cx, int cy);
+    PatchOrientation(const Frame& img, int cx, int cy);
 
   public:
     FASTExtractor(unsigned int margin,
