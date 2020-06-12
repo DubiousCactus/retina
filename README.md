@@ -6,7 +6,7 @@ Retina is a zero-dependency (almost) computer vision library built from scratch
 in C++17 (or trying to be). The only required dependency is ffmpeg (libavutil,
 libavformat, libavcodec, libswscale) for the video decoding bit.
 It was written to be easily readable (yes I'm looking at you OpenCV) and
-understandble, while trying to achieve decent performance.
+understandable, while trying to achieve decent performance.
 Technically, it could be built for embedded platforms as well if you don't need
 video decoding.
 
