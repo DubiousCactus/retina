@@ -13,6 +13,30 @@ video decoding.
 You won't ever be using this if you are mentally stable, but if you're looking
 for simple code to understand basic CV algorithms, this is the right place.
 
+## Usage
+Build it with cmake. Use it as in the example project in `example/`.
+
+## Literature and documentation
+
+The following papers and articles were used to understand all the computer
+vision methods and algorithms used in the building of this project:
+
+### Papers
+
+- ORB: an efficient alternative to SIFT or SURF
+- Fusing Points and Lines for High Performance Tracking
+- Machine learning for high-speed corner detection
+- BRIEF: Binary Robust IndependentElementary Features
+- Measuring Corner Properties
+- A COMBINED CORNER AND EDGE DETECTOR
+
+
+### Articles & websites
+
+- https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_feature2d/py_orb/py_orb.html
+- https://github.com/opencv/opencv
+
+
 ## TODO
 
 ### Feature extraction / description library 
@@ -44,24 +68,5 @@ for simple code to understand basic CV algorithms, this is the right place.
 
 - [ ] Multi-threading
 - [ ] Algorithmic optimizations (Matrix class mainly)
+- [ ] Harris algorithm (oh god it's terribly slow and dumb)
 
-
-## Literature and documentation
-
-The following papers and articles were used to understand all the computer
-vision methods and algorithms used in the building of this project:
-
-### Papers
-
-- ORB: an efficient alternative to SIFT or SURF
-- Fusing Points and Lines for High Performance Tracking
-- Machine learning for high-speed corner detection
-- BRIEF: Binary Robust IndependentElementary Features
-- Measuring Corner Properties
-- A COMBINED CORNER AND EDGE DETECTOR
-
-
-### Articles & websites
-
-- https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_feature2d/py_orb/py_orb.html
-- https://github.com/opencv/opencv
