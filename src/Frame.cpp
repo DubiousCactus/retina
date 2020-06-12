@@ -11,7 +11,7 @@ Pixel
 Frame::PixelAt(unsigned int x, unsigned int y) const
 {
     assert(x < this->Width() && y < this->Height());
-    // TODO: Use cache
+    // TODO: Use a cache
     return Pixel(x, y, this->data[y][x]);
 }
 

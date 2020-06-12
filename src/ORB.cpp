@@ -23,7 +23,7 @@ ORBExtractor::BuildPyramid()
 }
 
 ORBExtractor::ORBExtractor(size_t n_keypoints)
-  : fast_extractor(31, 3, 20, 12, 150, false, true, false, true, 31)
+  : fast_extractor(31, 3, 20, 12, 150, false, true, true, true, 31)
   , harris_extractor(true, true, true)
   , brief_descriptor(256, 31, GAUSSIAN_I, true)
 {

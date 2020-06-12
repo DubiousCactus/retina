@@ -25,6 +25,7 @@ FASTExtractor::FASTExtractor(unsigned int margin,
     this->centroid_radius = centroidRadius;
     this->full_high_speed_test = full_high_speed_test;
     this->intensity_threshold = intensity_threshold;
+    assert(contiguous_pixels >= 8); // Can only make a circle with 8+ pixels
     this->contiguous_pixels = contiguous_pixels;
     this->n_keypoints = n_keypoints;
     this->radius = radius; // For a circle of 16 pixels
@@ -172,8 +173,8 @@ FASTExtractor::Extract(const Frame& f)
      * 6. Non-maximal suppression (not in the case of ORB though)
      */
     int Ip, upperBound, lowerBound, score;
-    bool corner, brighter, darker;
-    unsigned short brighterPixels = 4, darkerPixels = 4;
+    bool corner;
+    unsigned short nDarker, nBrighter;
     this->keypoints.clear();
     this->keypoints.reserve(50000);
     this->annotated_frame = annotate ? std::make_shared<Frame>(Frame(f)) : nullptr;
@@ -209,80 +210,44 @@ FASTExtractor::Extract(const Frame& f)
                         continue;
                 } else {
                     /* At least 3 of those 4 pixels must be ALL brighter or ALL darker than p */
-                    brighterPixels = darkerPixels = 4;
+                    nBrighter = nDarker = 4;
                     for (auto p = testPixels.begin(); p != testPixels.end() &&
-                            (brighterPixels >=3 or darkerPixels >= 3); p++) {
+                            (nBrighter >=3 or nDarker >= 3); p++) {
                         if (*p <= upperBound) {
-                            brighterPixels--;
+                            nBrighter--;
                         }
                         if (*p >= lowerBound) {
-                            darkerPixels--;
+                            nDarker--;
                         }
                     }
 
-                    if (brighterPixels < 3 && darkerPixels < 3)
+                    if (nBrighter < 3 && nDarker < 3)
                         continue;
                 }
             }
 
             /* Complete corner test */
             auto circle = this->BresenhamCircle(center, f);
-            // TODO: Use a circular buffer or something in the std
-            auto GetPixelWithOverflow = [](std::vector<Pixel>& v, unsigned int i) {
-                assert(i / 2 < v.size());
-                unsigned int circleSize = v.size();
-                if (i >= circleSize)
-                    return v.at(i - circleSize);
-                else
-                    return v.at(i);
-            };
+            unsigned int nContiguousPixels = std::min(this->contiguous_pixels, (unsigned short) circle.size());
+            score = nDarker = nBrighter = 0;
             corner = false;
-            for (unsigned int i = 0; i < (int)circle.size(); i++) {
-                std::vector<Pixel> contiguousPixels(this->contiguous_pixels, 0);
-                // TODO: Unwrap by multiples of 8 (minimum size of a circle)
-                for (unsigned int j = 0; j < this->contiguous_pixels; j++)
-                    contiguousPixels[j] = GetPixelWithOverflow(circle, i + j);
-
-                brighter = true, darker = true;
-                for (auto & contiguousPixel : contiguousPixels) {
-                    if (contiguousPixel.intensity <= upperBound) {
-                        brighter = false;
-                        break;
-                    }
-                }
-
-                if (brighter) {
-                    corner = true;
-                    break;
-                }
-
-                for (auto & contiguousPixel : contiguousPixels) {
-                    if (contiguousPixel.intensity >= lowerBound) {
-                        darker = false;
-                        break;
-                    }
-                }
-
-                if (darker) {
+            for (auto &px : circle) {
+                score += abs(Ip - px.intensity);
+                nDarker = (px.intensity < lowerBound) ? nDarker + 1 : 0;
+                nBrighter = (px.intensity > upperBound) ? nBrighter + 1 : 0;
+                if (nDarker >= nContiguousPixels || nBrighter >= nContiguousPixels) {
                     corner = true;
                     break;
                 }
             }
 
             if (corner) {
-                // TODO: Optimize by including this computation in the above
-                // loop
-                score = 0;
-                for (unsigned int i = 0; i < (int)circle.size(); ++i) {
-                    score += abs(Ip - circle.at(i).intensity);
-                }
                 if (!non_max_suppression) {
                     float patchOrientation = 0;
                     if (orientation) {
-                        patchOrientation = this->PatchOrientation(imgMatrix, x, y);
+                        patchOrientation = this->PatchOrientation(f, x, y);
                     }
-                     // TODO: Write in a fixed size vector (large enough for the target amount) with indexing
-                    this->keypoints.emplace_back(x, y, score, patchOrientation);
+                    this->keypoints.emplace_back(KeyPoint(x, y, score, patchOrientation));
                 } else {
                     fastResponse.At(y, x) = score;
                 }
@@ -307,6 +272,7 @@ FASTExtractor::NonMaxSuppression(const Frame& image,
                                  Matrix<int>& fastResponse)
 {
     std::vector<KeyPoint> suppressed;
+    suppressed.reserve(50000);
     // TODO: Verify that this works as intended (no duplicates)
     // I feel like it removes way too much...
     for (int y = 1; y < fastResponse.Rows(); ++y) {
